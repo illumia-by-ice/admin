@@ -1,6 +1,3 @@
-import { Google } from "iconsax-react";
-import React from "react";
-
 const Page = () => {
   return (
     <div className="w-full h-screen flex justify-center items-center">

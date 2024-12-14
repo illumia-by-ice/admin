@@ -1,5 +1,4 @@
 import { Google } from "iconsax-react";
-import React from "react";
 
 const Page = () => {
   return (
