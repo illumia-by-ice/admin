@@ -27,7 +27,7 @@ const Page = () => {
             
             <button type="submit" className="w-[90%] p-3 text-white bg-green-600 rounded-lg">Login</button>
           </form>
-          <a href="forgotten-password"><p className="text-sm text-gray-500 text-right mt-3">Forgotten Password?</p></a>
+          <a href="/forgotten-password"><p className="text-sm text-gray-500 text-right mt-3">Forgotten Password?</p></a>
           <a href="https://6z3n7bx4-7000.euw.devtunnels.ms/api/auth/google" className="flex justify-center"><button className="mt-3 w-[90%] p-3 text-green-600 bg-white rounded-lg flex items-center justify-center gap-3 border-2 border-green-600"><Google size="26" color="#16a34a"/><span>Continue with Google</span></button></a>
         </div>
       </div>
