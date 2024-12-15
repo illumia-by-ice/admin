@@ -63,7 +63,7 @@ export function UserDataTable<TData, TValue>({
         onChange={(event) => setGlobalFilterValue(event.target.value)}
         className="p-3 outline-none rounded-lg border w-[30%] mb-5"
       />
-      <Table>
+      <Table className="border">
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id}>

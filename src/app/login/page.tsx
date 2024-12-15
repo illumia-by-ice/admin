@@ -53,7 +53,7 @@ const Page = () => {
   const onSubmit: SubmitHandler<ILoginFormInput> = async (data) => {
     setLoading(true);
     try {
-      const res = await api.post("/login", data);
+      const res = await api.post("/admin/login", data);
 
       if (res.status === 201) {
         setToken(res.data.accessToken);

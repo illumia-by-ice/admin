@@ -16,7 +16,7 @@ const Page = () => {
 
   const fetchUsers = async (page = 1) => {
     try {
-      const res = await api.get("/users", {
+      const res = await api.get("/admin/users", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
