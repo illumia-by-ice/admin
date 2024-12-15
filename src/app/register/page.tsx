@@ -4,8 +4,11 @@ import { Google } from "iconsax-react";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
+import { useState } from "react";
 
 const Page = () => {
+  const [loading, setLoading] = useState(false);
+
   const schema = yup.object({
     firstName: yup
       .string()
@@ -29,11 +32,16 @@ const Page = () => {
     formState: { errors },
   } = useForm<IRegisterFormInput>({
     resolver: yupResolver(schema),
-    mode: "all"
+    mode: "all",
   });
 
   const onSubmit: SubmitHandler<IRegisterFormInput> = (data) => {
-    console.log(data);
+    setLoading(true);
+
+    try {
+    } catch (err) {
+    } finally {
+    }
   };
 
   return (
@@ -85,14 +93,14 @@ const Page = () => {
               <p className="text-sm text-red-500">{errors.email?.message}</p>
             </div>
             <div className="flex flex-col w-[90%]">
-            <input
-              type="password"
-              id="password"
-              placeholder="Password"
-              className="p-3 border-2 w-full outline-none rounded-lg border-black/40"
-              {...register("password")}
-            />
-            <p className="text-sm text-red-500">{errors.password?.message}</p>
+              <input
+                type="password"
+                id="password"
+                placeholder="Password"
+                className="p-3 border-2 w-full outline-none rounded-lg border-black/40"
+                {...register("password")}
+              />
+              <p className="text-sm text-red-500">{errors.password?.message}</p>
             </div>
 
             <button
