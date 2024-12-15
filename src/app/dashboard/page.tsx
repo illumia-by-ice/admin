@@ -59,11 +59,11 @@ const Page = () => {
   }, []);
 
   return (
-    <div className="p-8">
+    <div className="p-8 overflow-auto">
       <div>
         <h1 className="text-2xl font-semibold">Hello There👋,</h1>
       </div>
-      <div className="mt-10">
+      <div className="mt-10 overflow-auto">
         <UserDataTable
           columns={userColumns}
           data={users}
@@ -71,7 +71,7 @@ const Page = () => {
         />
       </div>
       {meta && (
-        <div className="mt-6 flex flex-col items-end">
+        <div className="mt-6 flex flex-col md:items-end">
           <p>
             {/* @ts-ignore */}
             Showing page {meta.currentPage} of {meta.totalPages} | Total users:{" "}

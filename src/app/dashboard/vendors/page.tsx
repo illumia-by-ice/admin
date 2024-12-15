@@ -35,6 +35,7 @@ const Page = () => {
     }
   };
 
+  //@ts-ignore
   const verifyUser = async (uuid, verified) => {
 
     await api.post(

@@ -1,18 +1,29 @@
-"use client"
+"use client";
 
-import { House2, People, Setting, UserSquare } from "iconsax-react";
+import { useState } from "react";
+import { House2, People, Setting, UserSquare, Menu } from "iconsax-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { FaBars } from "react-icons/fa6";
 
-const Sidebar = () => {
-
-  const pathname = usePathname()
+//@ts-ignore
+const Sidebar = ({ isOpen, toggleSidebar }) => {
+  const pathname = usePathname();
 
   return (
-    <div className="w-full h-full p-6">
-      <h1 className="flex items-center">
+    <div className={`w-full md:w-1/5 h-full p-6 bg-white fixed md:static ${isOpen ? "left-0" : "-left-full"} transition-all duration-300 z-50`}>
+      <div className="flex justify-between items-center mb-6 md:hidden">
+        <h1 className="flex items-center">
+          <Setting size="32" color="#000" />
+          <span className="text-2xl font-extrabold ml-2">Dashboard</span>
+        </h1>
+        <button onClick={toggleSidebar}>
+          <FaBars size="32" color="#000" />
+        </button>
+      </div>
+      <h1 className="hidden md:flex items-center">
         <Setting size="32" color="#000" />
-        <span className="text-2xl font-extrabold">Dashboard</span>
+        <span className="text-2xl font-extrabold ml-2">Dashboard</span>
       </h1>
       <ul className="mt-12 flex flex-col gap-6">
         <Link href={"/dashboard"}>

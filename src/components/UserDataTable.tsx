@@ -56,7 +56,7 @@ export function UserDataTable<TData, TValue>({
   });
 
   return (
-    <div className="rounded-md">
+    <div className="rounded-md overflow-auto w-full">
       {/* Global Filter Input */}
       <input
         type="text"
@@ -65,7 +65,7 @@ export function UserDataTable<TData, TValue>({
         onChange={(event) => setGlobalFilterValue(event.target.value)}
         className="p-3 outline-none rounded-lg border w-[30%] mb-5"
       />
-      <Table className="border">
+      <Table className="border overflow-auto w-full">
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id}>
