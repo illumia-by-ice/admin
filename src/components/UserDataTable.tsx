@@ -31,13 +31,15 @@ const globalFilter: FilterFn<any> = (row, columnId, filterValue) => {
 };
 
 interface DataTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[];
-  data: TData[];
+  columns: ColumnDef<TData, TValue>[]; // Column definitions
+  data: TData[]; // Table data
+  verifyUser: (uuid: string, verified: boolean) => void;
 }
 
 export function UserDataTable<TData, TValue>({
   columns,
   data,
+  verifyUser
 }: DataTableProps<TData, TValue>) {
   const [globalFilterValue, setGlobalFilterValue] = useState("");
 
@@ -94,11 +96,21 @@ export function UserDataTable<TData, TValue>({
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>
                 ))}
+                <TableCell>
+                  <div className="flex gap-2">
+                    <button
+                      className={`px-3 py-1 text-white rounded ${row.original.verified ? "bg-red-500" : "bg-blue-500"} `}
+                      onClick={() => verifyUser(row.original.uuid, !row.original.verified)}
+                    >
+                     { row.original.verified ? "Unverify" : "Verify" }
+                    </button>
+                  </div>
+                </TableCell>
               </TableRow>
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={columns.length} className="h-24 text-center">
+              <TableCell colSpan={columns.length + 1} className="h-24 text-center">
                 No results.
               </TableCell>
             </TableRow>

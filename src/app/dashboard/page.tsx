@@ -35,6 +35,25 @@ const Page = () => {
     }
   };
 
+  //@ts-ignore
+  const verifyUser = async (uuid, verified) => {
+
+    await api.post(
+      "/admin/verification",
+      {
+        userId: uuid,
+        verified: verified,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    fetchUsers()
+  };
+
   useEffect(() => {
     fetchUsers(); // Fetch first page on load
   }, []);
@@ -45,7 +64,11 @@ const Page = () => {
         <h1 className="text-2xl font-semibold">Hello There👋,</h1>
       </div>
       <div className="mt-10">
-        <UserDataTable columns={userColumns} data={users} />
+        <UserDataTable
+          columns={userColumns}
+          data={users}
+          verifyUser={verifyUser}
+        />
       </div>
       {meta && (
         <div className="mt-6 flex flex-col items-end">
