@@ -6,14 +6,14 @@ import { useAuthStore } from "@/state/auth.store";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { FaBars, FaSpinner } from "react-icons/fa6";
-import { Menu, Setting } from "iconsax-react";
+import { Setting } from "iconsax-react";
 
 export default function DashLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  //@ts-ignore
+  //@ts-expect-error erroe
   const token = useAuthStore((state) => state.token);
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);

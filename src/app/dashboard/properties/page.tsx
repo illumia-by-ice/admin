@@ -32,7 +32,7 @@ const propertySchema = yup.object().shape({
 
 const Page = () => {
 
-    //@ts-ignore
+  //@ts-expect-error error
   const token = useAuthStore((state) => state.token);
 
   const [properties, setProperties] = useState([]);
@@ -75,7 +75,7 @@ const Page = () => {
     formData.append("price", data.price);
     formData.append("listingType", data.listingType);
     formData.append("tags", data.tags)
-    //@ts-ignore
+    //@ts-expect-error error
     Array.from(data.images).forEach((file) => formData.append("images", file));
 
     try {
@@ -182,26 +182,26 @@ const Page = () => {
       {meta && (
         <div className="mt-6 flex flex-col items-end">
           <p>
-            {/* @ts-ignore */}
+            {/* @ts-expect-error error */}
             Showing page {meta.currentPage} of {meta.totalPages} | Total properties:{" "}
-            {/* @ts-ignore */}
+            {/* @ts-expect-error error */}
             {meta.totalItems}
           </p>
           <div className="flex items-center">
             <button
               className="mt-3 mr-2 px-4 py-2 bg-blue-500 text-white rounded cursor-pointer"
-              // @ts-ignore
+              //@ts-expect-error error
               disabled={meta.currentPage <= 1}
-              // @ts-ignore
+              //@ts-expect-error error
               onClick={() => fetchProperties(meta.currentPage - 1)}
             >
               Previous
             </button>
             <button
               className="mt-3 px-4 py-2 bg-blue-500 text-white rounded cursor-pointer"
-              // @ts-ignore
+              //@ts-expect-error error
               disabled={meta.currentPage >= meta.totalPages}
-              // @ts-ignore
+              //@ts-expect-error error
               onClick={() => fetchProperties(meta.currentPage + 1)}
             >
               Next

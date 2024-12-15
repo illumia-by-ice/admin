@@ -8,7 +8,7 @@ import { AxiosError } from "axios";
 import { useEffect, useState } from "react";
 
 const Page = () => {
-  //@ts-ignore
+  //@ts-expect-error error
   const token = useAuthStore((state) => state.token);
 
   const [users, setUsers] = useState([]);
@@ -35,7 +35,7 @@ const Page = () => {
     }
   };
 
-  //@ts-ignore
+  //@ts-expect-error error
   const verifyUser = async (uuid, verified) => {
 
     await api.post(
@@ -59,6 +59,7 @@ const Page = () => {
   }, []);
 
   // Filter the users array to include only users with type "vendor"
+  //@ts-nocheck
   const vendorUsers = users.filter((user: any) => user.type === "VENDOR");
 
   return (
@@ -73,7 +74,7 @@ const Page = () => {
       {meta && (
         <div className="mt-6 flex flex-col items-end">
           <p>
-            {/* @ts-ignore */}
+            {/* @ts-expect-error error*/}
             Showing page {meta.currentPage} of {meta.totalPages} | Total users:{" "}
             {/* @ts-ignore */}
             {vendorUsers.length}
@@ -81,7 +82,7 @@ const Page = () => {
           <div className="flex items-center">
             <button
               className="mt-3 mr-2 px-4 py-2 bg-blue-500 text-white rounded cursor-pointer"
-              //@ts-ignore
+              //@ts-expect-error error
               disabled={meta.currentPage <= 1}
               //@ts-ignore
               onClick={() => fetchUsers(meta.currentPage - 1)}
@@ -90,9 +91,9 @@ const Page = () => {
             </button>
             <button
               className="mt-3 px-4 py-2 bg-blue-500 text-white rounded cursor-pointer"
-              //@ts-ignore
+              //@ts-expect-error error
               disabled={meta.currentPage >= meta.totalPages}
-              //@ts-ignore
+              //@ts-expect-error error
               onClick={() => fetchUsers(meta.currentPage + 1)}
             >
               Next
