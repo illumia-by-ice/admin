@@ -1,5 +1,91 @@
-export interface User {
+export interface Avatar {
+    id: number;
+    uuid: string;
+    src: string;
+    file_id: string | null;
+    type: string;
+    provider: string;
+    createdAt: string;
+    updatedAt: string;
+    propertyId: string | null;
+    artisanId: string | null;
+  }
+  
+  export interface Business {
+    uuid: string;
     name: string;
+    phone: string;
+    createdAt: string;
+    updatedAt: string;
+    addressId: string | null;
+    fileId: string | null;
+    cac: Cac | null;
+  }
+  
+  export interface Cac {
+    id: number;
+    uuid: string;
+    src: string;
+    file_id: string | null;
+    type: string;
+    provider: string;
+    createdAt: string;
+    updatedAt: string;
+    propertyId: string | null;
+    artisanId: string | null;
+  }
+  
+  export interface Subscription {
+    id: number;
+    uuid: string;
+    ref: string | null;
+    userRef: string | null;
+    type: string;
+    expired: boolean;
+    duration: string;
+    price: number;
+    active: boolean;
+    updatedAt: string;
+    nextPaymentAt: string | null;
+    createdAt: string;
+  }
+  
+  export interface GovtId {
+    id: number;
+    uuid: string;
+    src: string;
+    file_id: string | null;
+    type: string;
+    provider: string;
+    createdAt: string;
+    updatedAt: string;
+    propertyId: string | null;
+    artisanId: string | null;
+  }
+  
+  export interface User {
+    uuid: string;
     email: string;
-    verified: string;
-}
+    firstName: string;
+    lastName: string;
+    phone: string | null;
+    skills: string | null;
+    bio: string | null;
+    gender: string | null;
+    type: string;
+    root: boolean;
+    authProvider: string;
+    verified: boolean;
+    fileId: string;
+    govtFileId: string | null;
+    keyId: string | null;
+    createdAt: string;
+    updatedAt: string;
+    businessInfoId: string | null;
+    subscriptionId: string | null;
+    restrictionid: string | null;
+    avatar: Avatar;
+    business: Business | null;
+    subscription: Subscription | null;
+    govtId: GovtId | null;
+  }

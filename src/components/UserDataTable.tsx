@@ -1,11 +1,13 @@
-"use client"
+"use client";
 
 import {
   ColumnDef,
   flexRender,
   getCoreRowModel,
   useReactTable,
-} from "@tanstack/react-table"
+  getFilteredRowModel,
+  FilterFn,
+} from "@tanstack/react-table";
 
 import {
   Table,
@@ -14,25 +16,53 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
+} from "@/components/ui/table";
+import { useState } from "react";
+
+// Global filter function
+const globalFilter: FilterFn<any> = (row, columnId, filterValue) => {
+  return row
+    .getAllCells()
+    .some((cell) =>
+      String(cell.getValue())
+        .toLowerCase()
+        .includes(filterValue.toLowerCase())
+    );
+};
 
 interface DataTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[]
-  data: TData[]
+  columns: ColumnDef<TData, TValue>[];
+  data: TData[];
 }
 
 export function UserDataTable<TData, TValue>({
   columns,
   data,
 }: DataTableProps<TData, TValue>) {
+  const [globalFilterValue, setGlobalFilterValue] = useState("");
+
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
-  })
+    onGlobalFilterChange: setGlobalFilterValue,
+    globalFilterFn: globalFilter,
+    getFilteredRowModel: getFilteredRowModel(),
+    state: {
+      globalFilter: globalFilterValue,
+    },
+  });
 
   return (
-    <div className="rounded-md border">
+    <div className="rounded-md">
+      {/* Global Filter Input */}
+      <input
+        type="text"
+        placeholder="Filter Users..."
+        value={globalFilterValue}
+        onChange={(event) => setGlobalFilterValue(event.target.value)}
+        className="p-3 outline-none rounded-lg border w-[30%] mb-5"
+      />
       <Table>
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (
@@ -47,7 +77,7 @@ export function UserDataTable<TData, TValue>({
                           header.getContext()
                         )}
                   </TableHead>
-                )
+                );
               })}
             </TableRow>
           ))}
@@ -76,5 +106,5 @@ export function UserDataTable<TData, TValue>({
         </TableBody>
       </Table>
     </div>
-  )
+  );
 }
