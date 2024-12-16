@@ -89,5 +89,10 @@ export const propertyColumns: ColumnDef<Property>[] = [
   {
     accessorKey: "address.address",
     header: "Address",
+    cell: ({ getValue }) => {
+      const value = getValue();
+
+      return value === "undefined" ?  "N/A" : value  
+    }
   },
 ];

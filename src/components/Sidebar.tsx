@@ -11,8 +11,8 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
   const pathname = usePathname();
 
   return (
-    <div className={`w-full md:w-1/5 h-full p-6 bg-white fixed md:static ${isOpen ? "left-0" : "-left-full"} transition-all duration-300 z-50`}>
-      <div className="flex justify-between items-center mb-6 md:hidden">
+    <div className={`w-full h-full p-6 bg-white fixed lg:static ${isOpen ? "left-0" : "-left-full"} transition-all duration-300 z-50`}>
+      <div className="flex justify-between items-center mb-6 lg:hidden">
         <h1 className="flex items-center">
           <Setting size="32" color="#000" />
           <span className="text-2xl font-extrabold ml-2">Dashboard</span>
@@ -21,7 +21,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
           <FaBars size="32" color="#000" />
         </button>
       </div>
-      <h1 className="hidden md:flex items-center">
+      <h1 className="hidden lg:flex items-center">
         <Setting size="32" color="#000" />
         <span className="text-2xl font-extrabold ml-2">Dashboard</span>
       </h1>

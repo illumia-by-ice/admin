@@ -25,9 +25,16 @@ const propertySchema = yup.object().shape({
   price: yup
     .string()
     .required("Price is required"),
+    bedrooms: yup.string().optional(),
+    bathrooms: yup.string().optional(),
+    yearBuilt: yup.string().optional(),
+    squareFeet: yup.string().optional(),
+  address: yup.string().optional(),
+  statues: yup.string().optional(),
   listingType: yup.string().required("Listing Type is required"),
   tags: yup.string().required("Tags are required"),
   images: yup.mixed().required("Images are required"),
+  videoTour: yup.mixed().optional()
 });
 
 const Page = () => {
@@ -75,6 +82,14 @@ const Page = () => {
     formData.append("price", data.price);
     formData.append("listingType", data.listingType);
     formData.append("tags", data.tags)
+    formData.append("bathrooms", data.bathrooms || "")
+    formData.append("bedrooms", data.bedrooms || "")
+    formData.append("squareFeet", data.squareFeet || "")
+    formData.append("address", data.address || "")
+    formData.append("yearBuilt", data.yearBuilt || "")
+    formData.append("status", data.status || "")
+    formData.append("videoTour", data.videoTour)
+
     //@ts-expect-error error
     Array.from(data.images).forEach((file) => formData.append("images", file));
 
@@ -105,7 +120,7 @@ const Page = () => {
             <FaPlus size={24} />
             <span>Add Property</span>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="overflow-auto">
             <DialogHeader>
               <DialogTitle className="text-2xl">Add Property</DialogTitle>
             </DialogHeader>
@@ -137,6 +152,69 @@ const Page = () => {
                   {...register("price")}
                 />
                 <p className="text-sm text-red-500">{errors.price?.message}</p>
+              </div>
+              <div className="flex flex-col mt-2">
+                <input
+                  type="text"
+                  className="outline-none p-3 border rounded-lg"
+                  placeholder="Enter No of bedrooms"
+                  {...register("bedrooms")}
+                />
+                <p className="text-sm text-red-500">{errors.bedrooms?.message}</p>
+              </div>
+              <div className="flex flex-col mt-2">
+                <input
+                  type="text"
+                  className="outline-none p-3 border rounded-lg"
+                  placeholder="Enter No of bathrooms"
+                  {...register("bathrooms")}
+                />
+                <p className="text-sm text-red-500">{errors.bathrooms?.message}</p>
+              </div>
+              <div className="flex flex-col mt-2">
+                <input
+                  type="text"
+                  className="outline-none p-3 border rounded-lg"
+                  placeholder="Enter Year Built"
+                  {...register("yearBuilt")}
+                />
+                <p className="text-sm text-red-500">{errors.yearBuilt?.message}</p>
+              </div>
+              <div className="flex flex-col mt-2">
+                <input
+                  type="text"
+                  className="outline-none p-3 border rounded-lg"
+                  placeholder="Enter Square Feet of property"
+                  {...register("squareFeet")}
+                />
+                <p className="text-sm text-red-500">{errors.squareFeet?.message}</p>
+              </div>
+              <div className="flex flex-col mt-2">
+                <input
+                  type="text"
+                  className="outline-none p-3 border rounded-lg"
+                  placeholder="Enter Address"
+                  {...register("address")}
+                />
+                <p className="text-sm text-red-500">{errors.address?.message}</p>
+              </div>
+              <div className="flex flex-col mt-2">
+                <input
+                  type="text"
+                  className="outline-none p-3 border rounded-lg"
+                  placeholder="Enter property status"
+                  {...register("status")}
+                />
+                <p className="text-sm text-red-500">{errors.squareFeet?.message}</p>
+              </div>
+              <div className="flex flex-col mt-2">
+                <input
+                  type="file"
+                  className="outline-none p-3 border rounded-lg"
+                  placeholder="Enter Square Feet of property"
+                  {...register("videoTour")}
+                />
+                {/* <p className="text-sm text-red-500">{errors.videoTour?.message}</p> */}
               </div>
               <div className="flex flex-col mt-2">
                 <input

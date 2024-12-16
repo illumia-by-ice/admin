@@ -36,8 +36,6 @@ const Page = () => {
     email: yup.string().email("Invalid Email").required("Required"),
     password: yup
       .string()
-      .trim()
-      .min(6, "Password must contain at least 6 characters")
       .required("Required"),
   });
 
@@ -81,12 +79,6 @@ const Page = () => {
           <div className="w-full md:w-[60%] lg:w-[50%] xl:w-[35%] shadow-lg rounded-lg p-10 flex flex-col items-center">
             <img src="/images/img-auth-login.png" alt="Login" />
             <h1 className="text-center text-xl font-semibold">Login with your email</h1>
-            <p className="mt-3">
-              Don't have an account?{" "}
-              <a href="/register">
-                <span className="text-green-600">Register</span>
-              </a>
-            </p>
             <form
               className="mt-8 flex flex-col items-center w-full gap-3"
               onSubmit={handleSubmit(onSubmit)}

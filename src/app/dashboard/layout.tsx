@@ -41,7 +41,7 @@ export default function DashLayout({
 
   return (
     <main className="flex h-screen overflow-hidden">
-      <div className="w-full mb-6 p-6 md:hidden fixed top-4 z-50 flex justify-between items-center">
+      <div className="w-full mb-6 p-6 lg:hidden fixed top-4 z-50 flex justify-between items-center">
         <h1 className="flex items-center">
           <Setting size="32" color="#000" />
           <span className="text-2xl font-extrabold ml-2">Dashboard</span>
@@ -54,13 +54,13 @@ export default function DashLayout({
         </button>
       </div>
       <div
-        className={`w-full md:w-1/5 h-full md:relative ${
+        className={`w-full lg:w-1/5 h-full md:relative ${
           isSidebarOpen ? "block" : "hidden"
         } md:block`}
       >
         <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
       </div>
-      <div className="flex-grow bg-[#FAFBFF] h-full mt-20 md:mt-0">{children}</div>
+      <div className="flex-grow bg-[#FAFBFF] h-full mt-20 lg:mt-0">{children}</div>
     </main>
   );
 }
