@@ -60,7 +60,7 @@ export default function DashLayout({
       >
         <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
       </div>
-      <div className="flex-grow bg-[#FAFBFF] h-full mt-20 lg:mt-0">{children}</div>
+      <div className="flex-grow bg-[#FAFBFF] h-full mt-20 lg:mt-0 w-full">{children}</div>
     </main>
   );
 }

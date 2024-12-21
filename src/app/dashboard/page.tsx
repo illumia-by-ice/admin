@@ -13,6 +13,10 @@ const Page = () => {
 
   const [users, setUsers] = useState([]);
   const [meta, setMeta] = useState(null);
+  const [verifyLoading, setVerifyLoading] = useState('')
+  const [currentPage, setCurrentPage] = useState(0)
+  const [prevPage, setPrevPage] = useState(0)
+  const [nextPage, setNextPage] = useState(0)
 
   const fetchUsers = async (page = 1) => {
     try {
@@ -28,6 +32,9 @@ const Page = () => {
       if (res.data) {
         setUsers(res.data.data.data); // User data
         setMeta(res.data.data.meta); // Meta data
+        setCurrentPage(res.data.data.meta.currentPage)
+        setPrevPage(res.data.data.meta.currentPage - 1)
+        setNextPage(res.data.data.meta.currentPage + 1)
       }
     } catch (err) {
       const error = err as AxiosError;
@@ -37,6 +44,7 @@ const Page = () => {
 
   //@ts-expect-error error
   const verifyUser = async (uuid, verified) => {
+    setVerifyLoading(uuid)
 
     await api.post(
       "/admin/verification",
@@ -51,6 +59,7 @@ const Page = () => {
       }
     );
 
+    setVerifyLoading("")
     fetchUsers()
   };
 
@@ -59,15 +68,17 @@ const Page = () => {
   }, []);
 
   return (
-    <div className="p-8 overflow-auto">
+    <div className="p-8 w-full">
       <div>
         <h1 className="text-2xl font-semibold">Hello There👋,</h1>
       </div>
-      <div className="mt-10 overflow-auto">
+      <div className="mt-10">
         <UserDataTable
           columns={userColumns}
           data={users}
           verifyUser={verifyUser}
+          //@ts-ignore
+          verifyLoading={verifyLoading}
         />
       </div>
       {meta && (

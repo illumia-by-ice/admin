@@ -18,15 +18,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useState } from "react";
+import { FaSpinner } from "react-icons/fa6";
 
 // Global filter function
 const globalFilter: FilterFn<any> = (row, columnId, filterValue) => {
   return row
     .getAllCells()
     .some((cell) =>
-      String(cell.getValue())
-        .toLowerCase()
-        .includes(filterValue.toLowerCase())
+      String(cell.getValue()).toLowerCase().includes(filterValue.toLowerCase())
     );
 };
 
@@ -39,7 +38,9 @@ interface DataTableProps<TData, TValue> {
 export function UserDataTable<TData, TValue>({
   columns,
   data,
-  verifyUser
+  verifyUser,
+  //@ts-ignore
+  verifyLoading,
 }: DataTableProps<TData, TValue>) {
   const [globalFilterValue, setGlobalFilterValue] = useState("");
 
@@ -56,67 +57,85 @@ export function UserDataTable<TData, TValue>({
   });
 
   return (
-    <div className="rounded-md overflow-auto w-full">
+    <div className="rounded-md w-full">
       {/* Global Filter Input */}
       <input
         type="text"
         placeholder="Filter Users..."
         value={globalFilterValue}
         onChange={(event) => setGlobalFilterValue(event.target.value)}
-        className="p-3 outline-none rounded-lg border w-[30%] mb-5"
+        className="p-3 outline-none rounded-lg border md:w-[30%] mb-5"
       />
-      <Table className="border overflow-auto w-full">
-        <TableHeader>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id}>
-              {headerGroup.headers.map((header) => {
-                return (
-                  <TableHead key={header.id}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
+      <div className="w-full overflow-auto">
+        <Table className="border w-full">
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => {
+                  return (
+                    <TableHead key={header.id}>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                    </TableHead>
+                  );
+                })}
+              </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {table.getRowModel().rows?.length ? (
+              table.getRowModel().rows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id}>
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
+                    </TableCell>
+                  ))}
+                  <TableCell>
+                    <div className="flex gap-2">
+                      <button
+                        className={`px-3 py-1 text-white rounded ${
+                          row.original.verified ? "bg-red-500" : "bg-blue-500"
+                        } `}
+                        onClick={() =>
+                          verifyUser(row.original.uuid, !row.original.verified)
+                        }
+                      >
+                        {verifyLoading === row.original.uuid ? (
+                          <p className="px-3 py-2">
+                            <FaSpinner className="animate-spin" />
+                          </p>
+                        ) : (
+                          <>{row.original.verified ? "Unverify" : "Verify"}</>
                         )}
-                  </TableHead>
-                );
-              })}
-            </TableRow>
-          ))}
-        </TableHeader>
-        <TableBody>
-          {table.getRowModel().rows?.length ? (
-            table.getRowModel().rows.map((row) => (
-              <TableRow
-                key={row.id}
-                data-state={row.getIsSelected() && "selected"}
-              >
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </button>
+                    </div>
                   </TableCell>
-                ))}
-                <TableCell>
-                  <div className="flex gap-2">
-                    <button
-                      className={`px-3 py-1 text-white rounded ${row.original.verified ? "bg-red-500" : "bg-blue-500"} `}
-                      onClick={() => verifyUser(row.original.uuid, !row.original.verified)}
-                    >
-                     { row.original.verified ? "Unverify" : "Verify" }
-                    </button>
-                  </div>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length + 1}
+                  className="h-24 text-center"
+                >
+                  No results.
                 </TableCell>
               </TableRow>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell colSpan={columns.length + 1} className="h-24 text-center">
-                No results.
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }

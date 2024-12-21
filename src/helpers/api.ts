@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-    baseURL: "https://6z3n7bx4-7000.euw.devtunnels.ms/api"
+    baseURL: "https://illumiacityempire.com/api/api/"
 })
 
 export default api;
