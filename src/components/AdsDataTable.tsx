@@ -24,9 +24,7 @@ const globalFilter: FilterFn<any> = (row, columnId, filterValue) => {
   return row
     .getAllCells()
     .some((cell) =>
-      String(cell.getValue())
-        .toLowerCase()
-        .includes(filterValue.toLowerCase())
+      String(cell.getValue()).toLowerCase().includes(filterValue.toLowerCase())
     );
 };
 
@@ -38,6 +36,8 @@ interface DataTableProps<TData, TValue> {
 export function AdsDataTable<TData, TValue>({
   columns,
   data,
+  //@ts-ignore
+  deleteAd,
 }: DataTableProps<TData, TValue>) {
   const [globalFilterValue, setGlobalFilterValue] = useState("");
 
@@ -94,6 +94,19 @@ export function AdsDataTable<TData, TValue>({
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>
                 ))}
+                <TableCell>
+                  <div className="flex gap-2">
+                    <button
+                      className={`px-3 py-1 text-white rounded bg-red-500
+                       `}
+                      onClick={() =>
+                        deleteAd(row.original.uuid)
+                      }
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </TableCell>
               </TableRow>
             ))
           ) : (

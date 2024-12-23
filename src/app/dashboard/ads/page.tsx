@@ -58,13 +58,19 @@ const Page = () => {
 
   const deleteAd = async (id: string) => {
     try {
-      const res = await api.delete(`/admin/ad/${id}`);
+      const res = await api.delete(`/admin/ad/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       if (res.status === 200) {
         toast.success("Ads Deleted");
         fetchAds();
       }
     } catch (err) {
+      const error = err as AxiosError;
+      console.log(error);
       toast.error("An error occured while trying to delete the ad");
     }
   };
@@ -93,7 +99,7 @@ const Page = () => {
       // console.log("Error creating property:", error);
 
       const error = err as AxiosError;
-      console.log(error)
+      console.log(error);
       //@ts-expect-error error
       throw new Error(error.response?.data.message);
     }
@@ -202,7 +208,8 @@ const Page = () => {
       </div>
       <div className="mt-10">
         {/* Pass only filtered users to VendorDataTable */}
-        <AdsDataTable columns={adsColumns} data={ads} />
+        {/* @ts-ignore */}
+        <AdsDataTable columns={adsColumns} data={ads} deleteAd={deleteAd} />
       </div>
     </div>
   );
