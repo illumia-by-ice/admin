@@ -20,7 +20,7 @@ import {
 import { useState } from "react";
 
 // Global filter function
-const globalFilter: FilterFn<any> = (row, filterValue) => {
+const globalFilter: FilterFn<any> = (row, columnId, filterValue) => {
   return row
     .getAllCells()
     .some((cell) =>

@@ -35,3 +35,10 @@ interface ICreatePropertyFormInput {
   images: any;
   // videoTour?: any;
 }
+
+interface ICreateAdFormInput {
+  title: string;
+  description: string;
+  link?: string;
+  image: any;
+}
