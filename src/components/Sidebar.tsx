@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { House2, People, Setting, UserSquare, Menu } from "iconsax-react";
+import { House2, People, Setting, UserSquare, Menu, DeviceMessage, SmsEdit } from "iconsax-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { FaBars } from "react-icons/fa6";
@@ -38,10 +38,16 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
             <span className="text-lg">Properties</span>
           </li>
         </Link>
-        <Link href={"/dashboard/vendors"}>
-          <li className={`flex items-center gap-3 cursor-pointer p-3 rounded-md ${pathname === "/dashboard/vendors" ? "bg-[#00B087] text-white" : ""}`}>
-            <People size="26" color={`${pathname === "/dashboard/vendors" ? "#FFF" : "#000"}`} />
-            <span className="text-lg">Vendors</span>
+        <Link href={"/dashboard/ads"}>
+          <li className={`flex items-center gap-3 cursor-pointer p-3 rounded-md ${pathname === "/dashboard/ads" ? "bg-[#00B087] text-white" : ""}`}>
+            <DeviceMessage size="26" color={`${pathname === "/dashboard/ads" ? "#FFF" : "#000"}`} />
+            <span className="text-lg">Ads</span>
+          </li>
+        </Link>
+        <Link href={"/dashboard/messaging"}>
+          <li className={`flex items-center gap-3 cursor-pointer p-3 rounded-md ${pathname === "/dashboard/messaging" ? "bg-[#00B087] text-white" : ""}`}>
+            <SmsEdit size="26" color={`${pathname === "/dashboard/messaging" ? "#FFF" : "#000"}`} />
+            <span className="text-lg">Messaging</span>
           </li>
         </Link>
       </ul>

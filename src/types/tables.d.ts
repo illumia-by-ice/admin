@@ -142,3 +142,14 @@ export interface Property {
     propertyId: string;
   }[];
 }
+
+export interface Ads {
+  id: number;
+  uuid: string;
+  title: string;
+  description: string;
+  link: string | null;
+  updatedAt: string;
+  createdAt: string;
+  fileId: string;
+}

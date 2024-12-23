@@ -1,4 +1,4 @@
-import { Property, User } from "@/types/tables";
+import { Ads, Property, User } from "@/types/tables";
 import { ColumnDef } from "@tanstack/react-table";
 
 export const userColumns: ColumnDef<User>[] = [
@@ -35,7 +35,6 @@ export const userColumns: ColumnDef<User>[] = [
     cell: ({ getValue }) => new Date(getValue()).toLocaleDateString(),
   },
 ];
-
 
 export const propertyColumns: ColumnDef<Property>[] = [
   {
@@ -92,7 +91,36 @@ export const propertyColumns: ColumnDef<Property>[] = [
     cell: ({ getValue }) => {
       const value = getValue();
 
-      return value === "undefined" ?  "N/A" : value  
-    }
+      return value === "undefined" ? "N/A" : value;
+    },
+  },
+];
+
+export const adsColumns: ColumnDef<Ads>[] = [
+  {
+    accessorKey: "title",
+    header: "Title",
+  },
+  {
+    accessorKey: "description",
+    header: "Description",
+  },
+  {
+    accessorKey: "link",
+    header: "Link",
+    cell: ({ getValue }: any) => {
+      const value = getValue();
+
+      return value ?? "N/A";
+    },
+  },
+  {
+    accessorKey: "createdAt",
+    header: "Created At",
+    cell: ({ getValue }) => {
+      const value = getValue();
+      //@ts-ignore
+      return new Date(value).toLocaleDateString();
+    },
   },
 ];
