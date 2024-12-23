@@ -42,3 +42,9 @@ interface ICreateAdFormInput {
   link?: string;
   image: any;
 }
+
+interface ISendMessageFormInput {
+  to: string;
+  subject: string;
+  message: string;
+}
