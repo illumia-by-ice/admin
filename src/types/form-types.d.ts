@@ -24,16 +24,17 @@ interface ICreatePropertyFormInput {
   title: string;
   description: string;
   price: string;
-  // bedrooms?: string;
-  // bathrooms?: string;
-  // yearBuilt?: string;
-  // squareFeet?: string;
+  bedrooms?: string;
+  bathrooms?: string;
+  yearBuilt?: string;
+  squareFeet?: string;
   address?: string;
   // status?: string;
   listingType: string;
-  // tags: string;
+  tags: string;
   images: any;
-  // videoTour?: any;
+  videoTour?:string;
+  videoTour?: any;
 }
 
 interface ICreateAdFormInput {

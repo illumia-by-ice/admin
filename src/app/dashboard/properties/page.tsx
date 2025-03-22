@@ -27,16 +27,16 @@ const propertySchema = yup.object().shape({
   title: yup.string().required("Title is required"),
   description: yup.string().required("Description is required"),
   price: yup.string().required("Price is required"),
-  // bedrooms: yup.string().optional(),
-  // bathrooms: yup.string().optional(),
-  // yearBuilt: yup.string().optional(),
-  // squareFeet: yup.string().optional(),
+  bedrooms: yup.string().optional(),
+  bathrooms: yup.string().optional(),
+  yearBuilt: yup.string().optional(),
+  squareFeet: yup.string().optional(),
   address: yup.string().optional(),
   // statues: yup.string().optional(),
   listingType: yup.string().required("Listing Type is required"),
-  // tags: yup.string().required("Tags are required"),
+  tags: yup.string().required("Tags are required"),
   images: yup.mixed().required("Images are required"),
-  // videoTour: yup.mixed().optional(),
+  videoTour: yup.string().optional(),
 });
 
 const Page = () => {
@@ -73,7 +73,8 @@ const Page = () => {
 
       if (res.status === 201) {
         reset(); // Reset the form fields
-        fetchProperties(); // Refresh property list
+        window.location.reload();
+        // fetchProperties(); // Refresh property list
       }
     } catch (err) {
       // console.log("Error creating property:", error);
@@ -113,10 +114,10 @@ const Page = () => {
     formData.append("description", data.description);
     formData.append("price", data.price);
     formData.append("type", "PROPERTY");
-    // formData.append("bedrooms", data.bedrooms || "");
-    // formData.append("bathrooms", data.bathrooms || "");
-    // formData.append("yearBuilt", data.yearBuilt || "");
-    // formData.append("squareFeet", data.squareFeet || "");
+    formData.append("bedrooms", data.bedrooms || "");
+    formData.append("bathrooms", data.bathrooms || "");
+    formData.append("yearBuilt", data.yearBuilt || "");
+    formData.append("squareFeet", data.squareFeet || "");
     formData.append("address", data.address || "");
     // formData.append("status", data.status || "");
     formData.append("listingType", data.listingType.toLowerCase());
@@ -125,9 +126,7 @@ const Page = () => {
     //@ts-ignore
     // formData.append("tags", tagsArray);
 
-    // if (data.videoTour[0]) {
-    //   // formData.append("videoTour", data.videoTour[0]);
-    // }
+    formData.append("videoTour", data?.videoTour);
 
     Array.from(data.images).forEach((image) => {
       //@ts-ignore
@@ -199,7 +198,7 @@ const Page = () => {
                 />
                 <p className="text-sm text-red-500">{errors.price?.message}</p>
               </div>
-              {/* <div className="flex flex-col mt-5">
+              <div className="flex flex-col mt-5">
                 <label htmlFor="bedrooms" className="text-xs mb-1">
                   No of Bedrooms
                 </label>
@@ -254,7 +253,7 @@ const Page = () => {
                 <p className="text-sm text-red-500">
                   {errors.squareFeet?.message}
                 </p>
-              </div> */}
+              </div>
               <div className="flex flex-col mt-5">
                 <label htmlFor="address" className="text-xs mb-1">
                   Address
@@ -312,7 +311,7 @@ const Page = () => {
                 </p>
               </div>
 
-              {/* <div className="flex flex-col mt-5">
+              <div className="flex flex-col mt-5">
                 <label htmlFor="price" className="text-xs mb-1">
                   Tags(Seperate Multiple Tags With A Comma)
                   <span className="text-red-500">*</span>
@@ -328,19 +327,21 @@ const Page = () => {
                   })}
                 />
                 <p className="text-sm text-red-500">{errors.tags?.message}</p>
-              </div> */}
-              {/* <div className="flex flex-col mt-5">
+              </div>
+              <div className="flex flex-col mt-5">
                 <label htmlFor="videoTour" className="text-xs mb-1">
-                  Select Property Video Tour
+                  Property Video Tour
                 </label>
                 <input
-                  type="file"
-                  accept="video/*"
+                  type="text"
+                  placeholder="https://youtube.com/watch/asin289"
                   className="outline-none p-3 border rounded-lg"
                   {...register("videoTour")}
                 />
-                <p className="text-sm text-red-500">{errors.videoTour?.message}</p>
-              </div> */}
+                <p className="text-sm text-red-500">
+                  {errors.videoTour?.message}
+                </p>
+              </div>
               <div className="flex flex-col mt-5">
                 <label htmlFor="images" className="text-xs mb-1">
                   Select Property Pictures
