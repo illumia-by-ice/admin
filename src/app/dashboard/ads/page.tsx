@@ -36,7 +36,7 @@ const Page = () => {
 
   const fetchAds = async () => {
     try {
-      const res = await api.get("/ad", {
+      const res = await api.get("/ads", {
         headers: {
           Authorization: `Bearer ${token}`,
         },

@@ -24,20 +24,20 @@ const globalFilter: FilterFn<any> = (row, columnId, filterValue) => {
   return row
     .getAllCells()
     .some((cell) =>
-      String(cell.getValue())
-        .toLowerCase()
-        .includes(filterValue.toLowerCase())
+      String(cell.getValue()).toLowerCase().includes(filterValue.toLowerCase())
     );
 };
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
+  deleteProperty:any
 }
 
 export function PropertyTableData<TData, TValue>({
   columns,
   data,
+  deleteProperty,
 }: DataTableProps<TData, TValue>) {
   const [globalFilterValue, setGlobalFilterValue] = useState("");
 
@@ -94,6 +94,19 @@ export function PropertyTableData<TData, TValue>({
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>
                 ))}
+                <TableCell>
+                  <div className="flex gap-2">
+                    <button
+                      className={`px-3 py-1 text-white rounded bg-red-500
+                                       `}
+                      onClick={() => {
+                        deleteProperty?.(row.original.uuid)
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </TableCell>
               </TableRow>
             ))
           ) : (

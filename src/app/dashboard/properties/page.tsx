@@ -140,6 +140,25 @@ const Page = () => {
     });
   };
 
+  const deleteProperty = async (id: string) => {
+    try {
+      const res = await api.delete(`/property/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (res.status === 200) {
+        toast.success("Property Deleted");
+        fetchProperties();
+      }
+    } catch (err) {
+      const error = err as AxiosError;
+      console.log(error);
+      toast.error("An error occured while trying to delete the Property");
+    }
+  };
+
   return (
     <div className="p-8">
       <div className="flex justify-between items-center">
@@ -370,7 +389,7 @@ const Page = () => {
         </Sheet>
       </div>
       <div className="mt-10">
-        <PropertyTableData columns={propertyColumns} data={properties} />
+        <PropertyTableData columns={propertyColumns} deleteProperty={deleteProperty} data={properties} />
       </div>
       {meta && (
         <div className="mt-6 flex flex-col items-end">
