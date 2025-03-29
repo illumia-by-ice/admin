@@ -108,6 +108,18 @@ export interface Property {
   tourFileId: string | null;
   userId: string;
   specificationsId: string;
+  specifications:{
+    bedrooms: number;
+    bathrooms: number;
+    squareFeet: string;
+    lotSize?: number | null;
+    yearBuilt: string;
+    furnishing: FurnishingType;
+    parkingSpaces: number;
+    gym: boolean;
+    garden: boolean;
+    pool: boolean;
+  },
   addressId: string;
   images: {
     id: number;

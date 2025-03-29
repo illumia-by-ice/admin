@@ -18,6 +18,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 // Global filter function
 const globalFilter: FilterFn<any> = (row, columnId, filterValue) => {
@@ -31,7 +32,7 @@ const globalFilter: FilterFn<any> = (row, columnId, filterValue) => {
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
-  deleteProperty:any
+  deleteProperty: any;
 }
 
 export function PropertyTableData<TData, TValue>({
@@ -40,7 +41,7 @@ export function PropertyTableData<TData, TValue>({
   deleteProperty,
 }: DataTableProps<TData, TValue>) {
   const [globalFilterValue, setGlobalFilterValue] = useState("");
-
+  const router = useRouter();
   const table = useReactTable({
     data,
     columns,
@@ -100,10 +101,25 @@ export function PropertyTableData<TData, TValue>({
                       className={`px-3 py-1 text-white rounded bg-red-500
                                        `}
                       onClick={() => {
-                        deleteProperty?.(row.original.uuid)
+                        deleteProperty?.(row.original.uuid);
                       }}
                     >
                       Delete
+                    </button>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="flex gap-2">
+                    <button
+                      className={`px-3 py-1 text-white rounded bg-green-600
+                                       `}
+                      onClick={() => {
+                        router.push(
+                          `/dashboard/properties/edit/${row.original.uuid}`
+                        );
+                      }}
+                    >
+                      Edit
                     </button>
                   </div>
                 </TableCell>
