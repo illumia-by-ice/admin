@@ -54,7 +54,7 @@ const Page = () => {
         params: { page },
       });
 
-      console.log(res);
+      // console.log(res);
 
       if (res.data) {
         setProperties(res.data.data.data);
@@ -120,7 +120,7 @@ const Page = () => {
     formData.append("squareFeet", data.squareFeet || "");
     formData.append("address", data.address || "");
     // formData.append("status", data.status || "");
-    formData.append("listingType", data.listingType.toLowerCase());
+    formData.append("listingType", data.listingType.toUpperCase());
     // console.log(data.listingType)
     // formData.append("images", data.images)
     //@ts-ignore
@@ -305,7 +305,7 @@ const Page = () => {
                 <label htmlFor="listingType" className="text-xs mb-1">
                   Listing Type<span className="text-red-500">*</span>
                 </label>
-                <div className="flex items-center space-x-4">
+                <div className="flex items-center flex-wrap space-x-4">
                   <label className="flex items-center space-x-2">
                     <input
                       type="radio"
@@ -314,6 +314,24 @@ const Page = () => {
                       {...register("listingType")}
                     />
                     <span>Rent</span>
+                  </label>
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      value="Hotel"
+                      className="outline-none border rounded-lg"
+                      {...register("listingType")}
+                    />
+                    <span>Hotel</span>
+                  </label>
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      value="Shortlet"
+                      className="outline-none border rounded-lg"
+                      {...register("listingType")}
+                    />
+                    <span>Shortlet</span>
                   </label>
                   <label className="flex items-center space-x-2">
                     <input
