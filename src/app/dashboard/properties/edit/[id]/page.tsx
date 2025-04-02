@@ -320,6 +320,30 @@ const Page = () => {
                   </label>
                   <label className="flex items-center space-x-2">
                     <input
+                      type="radio"
+                      value="Hotel"
+                      onChange={formik.handleChange}
+                      className="outline-none border rounded-lg"
+                      checked={
+                        formik.values.listingType?.toLowerCase() === "hotel"
+                      }
+                    />
+                    <span>Hotel</span>
+                  </label>
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      onChange={formik.handleChange}
+                      value="Shortlet"
+                      className="outline-none border rounded-lg"
+                      checked={
+                        formik.values.listingType?.toLowerCase() === "shortlet"
+                      }
+                    />
+                    <span>Shortlet</span>
+                  </label>
+                  <label className="flex items-center space-x-2">
+                    <input
                       id="listingType"
                       name="listingType"
                       type="radio"
