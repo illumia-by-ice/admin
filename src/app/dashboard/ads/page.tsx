@@ -23,8 +23,8 @@ import { AxiosError } from "axios";
 
 const Page = () => {
   const createAdSchema = yup.object().shape({
-    title: yup.string().required("Title is required"),
-    description: yup.string().required("Description is required"),
+    title: yup.string().optional(),
+    description: yup.string().optional(),
     link: yup.string().optional(),
     image: yup.mixed().required("Image is required"),
   });
@@ -109,8 +109,8 @@ const Page = () => {
     const formData = new FormData();
 
     // Append text fields
-    formData.append("title", data.title);
-    formData.append("description", data.description);
+    formData.append("title", data?.title||"");
+    formData.append("description", data?.description||"");
     formData.append("link", data.link || "");
     formData.append(`image`, data.image[0]);
 

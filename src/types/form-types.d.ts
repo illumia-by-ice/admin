@@ -38,8 +38,8 @@ interface ICreatePropertyFormInput {
 }
 
 interface ICreateAdFormInput {
-  title: string;
-  description: string;
+  title?: string;
+  description?: string;
   link?: string;
   image: any;
 }
