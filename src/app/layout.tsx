@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Aje Properties",
-  description: "Aje Properties Admin Panel",
+  title: "Illumia Household & Properties",
+  description: "Illumia Household & Properties Admin Panel",
 };
 
 export default function RootLayout({

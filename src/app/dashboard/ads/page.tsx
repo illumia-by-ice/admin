@@ -25,7 +25,7 @@ const Page = () => {
   const createAdSchema = yup.object().shape({
     title: yup.string().optional(),
     description: yup.string().optional(),
-    link: yup.string().optional(),
+    link: yup.string().required("Link is required"),
     image: yup.mixed().required("Image is required"),
   });
 
@@ -109,8 +109,8 @@ const Page = () => {
     const formData = new FormData();
 
     // Append text fields
-    formData.append("title", data?.title||"");
-    formData.append("description", data?.description||"");
+    formData.append("title", data?.title || "");
+    formData.append("description", data?.description || "");
     formData.append("link", data.link || "");
     formData.append(`image`, data.image[0]);
 
@@ -144,7 +144,7 @@ const Page = () => {
             >
               <div className="flex flex-col">
                 <label htmlFor="title" className="text-xs mb-1">
-                  Ad Title <span className="text-red-500">*</span>
+                  Ad Title
                 </label>
                 <input
                   type="text"
@@ -156,7 +156,7 @@ const Page = () => {
               </div>
               <div className="flex flex-col mt-5">
                 <label htmlFor="description" className="text-xs mb-1">
-                  Ad Description<span className="text-red-500">*</span>
+                  Ad Description
                 </label>
                 <textarea
                   className="outline-none p-3 border rounded-lg"
@@ -169,7 +169,7 @@ const Page = () => {
               </div>
               <div className="flex flex-col mt-5">
                 <label htmlFor="link" className="text-xs mb-1">
-                  Ad Link
+                  Ad Link <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
