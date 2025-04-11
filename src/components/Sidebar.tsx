@@ -15,6 +15,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { FaBars } from "react-icons/fa6";
 import { useAuthStore } from "@/state/auth.store";
+import { Users2 } from "lucide-react";
 
 //@ts-ignore
 const Sidebar = ({ isOpen, toggleSidebar }) => {
@@ -77,6 +78,23 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                 }`}
               />
               <span className="text-lg">Properties</span>
+            </li>
+          </Link>
+          <Link href={"/dashboard/vendors"}>
+            <li
+              className={`flex items-center gap-3 cursor-pointer p-3 rounded-md ${
+                pathname === "/dashboard/vendors"
+                  ? "bg-[#00B087] text-white"
+                  : ""
+              }`}
+            >
+              <Users2
+                size="26"
+                color={`${
+                  pathname === "/dashboard/vendors" ? "#FFF" : "#000"
+                }`}
+              />
+              <span className="text-lg">Vendor</span>
             </li>
           </Link>
           <Link href={"/dashboard/ads"}>
