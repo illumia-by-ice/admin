@@ -44,7 +44,7 @@ export const propertyColumns: ColumnDef<Property>[] = [
   {
     accessorKey: "price",
     header: "Price",
-    cell: ({ getValue }) => `₦${Number(getValue()).toLocaleString()}`,
+    cell: ({ getValue, row }) => `${row.original.currency} ${Number(getValue()).toLocaleString()}`,
   },
   {
     accessorKey: "listingType",

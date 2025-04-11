@@ -26,6 +26,7 @@ interface ICreatePropertyFormInput {
   price: string;
   bedrooms?: string;
   bathrooms?: string;
+  currency:string;
   yearBuilt?: string;
   squareFeet?: string;
   address?: string;

@@ -8,7 +8,17 @@ import { Property } from "@/types/tables";
 import toast from "react-hot-toast";
 import { FaSpinner } from "react-icons/fa6";
 import { useAuthStore } from "@/state/auth.store";
-
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+const currencies = [
+  { code: "NGN", symbol: "₦", name: "Nigerian Naira" },
+  { code: "USD", symbol: "$", name: "US Dollar" },
+];
 const Page = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { id } = useParams();
@@ -16,6 +26,10 @@ const Page = () => {
   const [success, setSuccess] = useState(false);
   const [data, setData] = useState<Property>(null!);
   const [fetching, setFetching] = useState(true);
+  const getCurrencySymbol = (code: string) => {
+    const currency = currencies.find((c) => c.code === code);
+    return currency ? currency.symbol : code;
+  };
 
   // Validation schema using Yup
   const validationSchema = Yup.object({
@@ -52,6 +66,7 @@ const Page = () => {
       propertyId: id || "",
       bathrooms: "",
       yearBuilt: "",
+      currency: "NGN",
       squareFeet: "",
       address: "",
       listingType: "",
@@ -69,6 +84,7 @@ const Page = () => {
 
         if (response.status == 200) {
           toast.success("Property Updated");
+          alert(values.currency)
           return window.location.assign("/dashboard/properties");
         }
         setSuccess(false);
@@ -97,6 +113,7 @@ const Page = () => {
       formik.setFieldValue("description", pro?.description);
       formik.setFieldValue("price", pro?.price);
       formik.setFieldValue("bedrooms", pro?.specifications?.bedrooms);
+      formik.setFieldValue("currency", pro?.currency || "NGN");
       formik.setFieldValue("bathrooms", pro?.specifications?.bathrooms);
       formik.setFieldValue("yearBuilt", pro?.specifications?.yearBuilt);
       formik.setFieldValue("squareFeet", pro?.specifications?.squareFeet);
@@ -173,6 +190,32 @@ const Page = () => {
                     {formik.errors.description}
                   </p>
                 )}
+              </div>
+
+              <div className="">
+                <Select
+                  value={formik.values.currency}
+                  onValueChange={(value: string) =>
+                    formik.setFieldValue("currency", value)
+                  }
+                >
+                  <SelectTrigger id="currency" className="w-full mt-5 h-[60px]">
+                    <SelectValue placeholder="Select currency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {currencies.map((currency) => (
+                      <SelectItem key={currency.code} value={currency.code}>
+                        <span className="flex items-center">
+                          <span className="mr-2">{currency.symbol}</span>
+                          <span>{currency.code}</span>
+                          <span className="ml-2 text-gray-500 text-xs">
+                            ({currency.name})
+                          </span>
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="flex flex-col mt-5">

@@ -16,11 +16,23 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { FaPlus } from "react-icons/fa6";
-import { SubmitHandler, useForm } from "react-hook-form";
+import { SubmitHandler, useForm, Controller } from "react-hook-form";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { AxiosError } from "axios";
 import toast from "react-hot-toast";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+const currencies = [
+  { code: "NGN", symbol: "₦", name: "Nigerian Naira" },
+  { code: "USD", symbol: "$", name: "US Dollar" },
+];
 
 // Validation schema
 const propertySchema = yup.object().shape({
@@ -32,7 +44,7 @@ const propertySchema = yup.object().shape({
   yearBuilt: yup.string().optional(),
   squareFeet: yup.string().optional(),
   address: yup.string().optional(),
-  // statues: yup.string().optional(),
+  currency: yup.string().required("Currency Required"),
   listingType: yup.string().required("Listing Type is required"),
   tags: yup.string().required("Tags are required"),
   images: yup.mixed().required("Images are required"),
@@ -94,6 +106,7 @@ const Page = () => {
     register,
     handleSubmit,
     reset,
+    control,
     formState: { errors },
   } = useForm<ICreatePropertyFormInput>({
     resolver: yupResolver(propertySchema),
@@ -118,6 +131,7 @@ const Page = () => {
     formData.append("bathrooms", data.bathrooms || "");
     formData.append("yearBuilt", data.yearBuilt || "");
     formData.append("squareFeet", data.squareFeet || "");
+    formData.append("currency", data.currency || "");
     formData.append("address", data.address || "");
     // formData.append("status", data.status || "");
     formData.append("listingType", data.listingType.toUpperCase());
@@ -205,6 +219,44 @@ const Page = () => {
                   {errors.description?.message}
                 </p>
               </div>
+
+              <div className="">
+                <label htmlFor="currency" className="text-xs mb-1">
+                  Currency <span className="text-red-500">*</span>
+                </label>
+                <Controller
+                  name="currency"
+                  control={control}
+                  defaultValue=""
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger
+                        id="currency"
+                        className="w-full mt-2 h-[60px]"
+                      >
+                        <SelectValue placeholder="Select currency" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {currencies.map((currency) => (
+                          <SelectItem key={currency.code} value={currency.code}>
+                            <span className="flex items-center">
+                              <span className="mr-2">{currency.symbol}</span>
+                              <span>{currency.code}</span>
+                              <span className="ml-2 text-gray-500 text-xs">
+                                ({currency.name})
+                              </span>
+                            </span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                <p className="text-sm text-red-500">
+                  {errors.currency?.message}
+                </p>
+              </div>
+
               <div className="flex flex-col mt-5">
                 <label htmlFor="price" className="text-xs mb-1">
                   Property Price<span className="text-red-500">*</span>
@@ -407,7 +459,11 @@ const Page = () => {
         </Sheet>
       </div>
       <div className="mt-10">
-        <PropertyTableData columns={propertyColumns} deleteProperty={deleteProperty} data={properties} />
+        <PropertyTableData
+          columns={propertyColumns}
+          deleteProperty={deleteProperty}
+          data={properties}
+        />
       </div>
       {meta && (
         <div className="mt-6 flex flex-col items-end">
