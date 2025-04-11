@@ -43,7 +43,7 @@ export interface Property {
   userId?: string;
 }
 
-export type Product = Property
+export type Product = Property;
 export type Avatar = any;
 type userType = "BUYER" | "ADMIN" | "AGENT" | "VENDOR" | "ARTISAN";
 export interface Agent {
@@ -91,17 +91,12 @@ export interface ProductFormData {
 }
 
 export const availableTags = [
-  "All",
   "Electronics",
   "Clothing",
   "Home",
   "Garden",
-  "Sports",
-  "Automotive",
-  "Books",
-  "Toys",
-  "Health",
-  "Beauty",
+  "Cleaning",
+  "Business",
 ];
 
 export const initialProducts: Property[] = [];

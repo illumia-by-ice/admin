@@ -1,8 +1,15 @@
 // components/ProductDetailDialog.tsx
 "use client";
 
-import React from "react";
-import { DollarSign, MapPin, Edit, Trash } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import {
+  DollarSign,
+  MapPin,
+  Edit,
+  Trash,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -28,7 +35,30 @@ export const ProductDetailDialog: React.FC<ProductDetailDialogProps> = ({
   onEdit,
   onDelete,
 }) => {
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  useEffect(() => {
+    setCurrentImageIndex(0);
+  }, [isOpen]);
   if (!product) return null;
+
+  const totalImages = product.images.length;
+
+  const nextImage = () => {
+    setCurrentImageIndex((prevIndex) =>
+      prevIndex === totalImages - 1 ? 0 : prevIndex + 1
+    );
+  };
+
+  const prevImage = () => {
+    setCurrentImageIndex((prevIndex) =>
+      prevIndex === 0 ? totalImages - 1 : prevIndex - 1
+    );
+  };
+
+  const goToImage = (index: number) => {
+    setCurrentImageIndex(index);
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -38,17 +68,74 @@ export const ProductDetailDialog: React.FC<ProductDetailDialogProps> = ({
         </DialogHeader>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div>
-            <img
-              src={product.images[0].src}
-              alt={product.title}
-              className="w-full rounded-lg object-cover"
-            />
+          <div className="space-y-3">
+            {/* Main Image with Navigation */}
+            <div className="relative rounded-lg overflow-hidden aspect-square bg-gray-100">
+              <img
+                src={product.images[currentImageIndex].src}
+                alt={`${product.title} - Image ${currentImageIndex + 1}`}
+                className="w-full h-full object-cover"
+              />
+
+              {totalImages > 1 && (
+                <>
+                  {/* Navigation Arrows */}
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    className="absolute left-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-white bg-opacity-70 hover:bg-opacity-100 shadow-md"
+                    onClick={prevImage}
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                  </Button>
+
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-white bg-opacity-70 hover:bg-opacity-100 shadow-md"
+                    onClick={nextImage}
+                  >
+                    <ChevronRight className="h-5 w-5" />
+                  </Button>
+
+                  {/* Image Counter */}
+                  <div className="absolute bottom-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded-full">
+                    {currentImageIndex + 1} / {totalImages}
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Thumbnail Gallery */}
+            {totalImages > 1 && (
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {product.images.map((image, index) => (
+                  <button
+                    key={index}
+                    onClick={() => goToImage(index)}
+                    className={`flex-shrink-0 w-16 h-16 rounded-md overflow-hidden border-2 transition-all ${
+                      currentImageIndex === index
+                        ? "border-blue-500 opacity-100"
+                        : "border-transparent opacity-70 hover:opacity-100"
+                    }`}
+                  >
+                    <img
+                      src={image.src}
+                      alt={`Thumbnail ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="space-y-4">
             <div className="flex items-center">
-              <span className="text-2xl font-bold">{product.currency}{product.price}</span>
+              <span className="text-2xl font-bold">
+                {product.currency}
+                {product.price}
+              </span>
             </div>
 
             <div>

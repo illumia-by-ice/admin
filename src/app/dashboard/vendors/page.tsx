@@ -1,7 +1,7 @@
 // app/page.tsx
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Plus } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -13,10 +13,15 @@ import { ProductDetailDialog } from "@/components/ProductDetailsDialog";
 import { ProductFormDialog } from "@/components/ProductFormDialog";
 import { nanoid } from "nanoid";
 import api from "@/helpers/api";
+import { useAuthStore } from "@/state/auth.store";
+import toast from "react-hot-toast";
 export default function ProductMarketplace() {
   // Use client-side only initialization for dynamic state
   const [mounted, setMounted] = useState(false);
   const [fetching, setFetching] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setMore] = useState(false);
+
   const fetchProperties = async () => {
     try {
       setFetching(true);
@@ -24,9 +29,12 @@ export default function ProductMarketplace() {
         params: {
           marketplace: true,
           type: "PRODUCT",
+          limit: 100,
+          page,
         },
       });
       setProducts(data?.data?.data || []);
+      setMore(data.data.meta.totalPages > data.data.meta.currentPage);
     } catch (error) {
     } finally {
       setFetching(false);
@@ -35,7 +43,18 @@ export default function ProductMarketplace() {
 
   useEffect(() => {
     fetchProperties();
-  }, []);
+  }, [page]);
+
+  const handleNext = () => {
+    if (hasMore) {
+      setPage((prev) => prev + 1);
+    }
+  };
+  const handlePrev = () => {
+    if (page > 0) {
+      setPage((prev) => prev - 1);
+    }
+  };
 
   // State management
   const [products, setProducts] = useState<Product[]>([]);
@@ -89,49 +108,80 @@ export default function ProductMarketplace() {
     setIsDeleteDialogOpen(true);
   };
 
+  const [deleting, setDeleting] = useState(false);
   // Delete a product
-  const deleteProduct = () => {
+  const deleteProduct = async () => {
     if (currentProduct) {
-      setProducts(
-        products.filter((product) => product.currency !== currentProduct.uuid)
-      );
-      setIsDeleteDialogOpen(false);
+      setDeleting(true);
+      try {
+        await api.delete(`/admin/products/${currentProduct.uuid}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        toast.error("Deleted");
+        fetchProperties();
+        setIsDeleteDialogOpen(false);
+      } catch (error) {
+        toast.error("An error Occurred");
+      } finally {
+        setDeleting(false);
+      }
     }
   };
 
+  const [loading, setLoading] = useState(false);
+
+  const token = useAuthStore((state: any) => state.token);
   // Generate a stable ID (avoiding Date.now())
-  const generateId = () => {
-    return `product-${nanoid()}`;
-  };
-
   // Submit form (create or update)
-  const handleSubmit = (formData: ProductFormData) => {
-    if (isEditing && currentProduct) {
-      // Update existing product
-    } else {
-      // Create new product
-      //   const newProduct: Product = {
-      //     id: generateId(),
-      //     title: formData.title,
-      //     price: parseFloat(formData.price),
-      //     description: formData.description,
-      //     tags: formData.tags,
-      //     address: formData.address,
-      //     images: formData.images,
-      //   };
-      //   setProducts([...products, newProduct]);
-    }
+  const handleSubmit = async (formData: {
+    formData: FormData;
+    rawData: ProductFormData;
+  }) => {
+    try {
+      setLoading(true);
+      if (isEditing && currentProduct) {
+        console.log("EDITING", formData.rawData);
+        console.log("EDITING", formData.formData.values());
+        const response = await api.put(
+          `/admin/products/${currentProduct.uuid}`,
+          formData.formData,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        toast.success("Created");
+        setIsFormOpen(false);
+        fetchProperties();
 
-    setIsFormOpen(false);
+        // Update existing product
+      } else {
+        const response = await api.post("/admin/products", formData.formData, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        toast.success("Created");
+        setIsFormOpen(false);
+        fetchProperties();
+      }
+    } catch (error) {
+      toast.error("An Error Occurred");
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Return a loading state during server-side rendering
-  if (!mounted) {
+  if (!mounted || fetching) {
     return (
       <div className="container mx-auto py-8 px-4">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold">Product Marketplace</h1>
+            <h1 className="text-3xl font-bold">Vendors Marketplace</h1>
             <p className="text-gray-500 mt-2">Loading products...</p>
           </div>
         </div>
@@ -164,16 +214,27 @@ export default function ProductMarketplace() {
 
       {/* Product Grid */}
       {filteredProducts.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredProducts.map((product) => (
-            <ProductCard
-              key={product.uuid}
-              product={product}
-              onView={handleViewProduct}
-              onEdit={handleEditProduct}
-              onDelete={handleDeleteConfirm}
-            />
-          ))}
+        <div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredProducts.map((product) => (
+              <ProductCard
+                key={product.uuid}
+                product={product}
+                onView={handleViewProduct}
+                onEdit={handleEditProduct}
+                onDelete={handleDeleteConfirm}
+              />
+            ))}
+          </div>
+          <div className="m-8 flex gap-4 items-center">
+            <Button disabled={page <= 1} onClick={handlePrev}>
+              Prev
+            </Button>
+            <span className="font-bold">{page}</span>
+            <Button disabled={!hasMore} onClick={handleNext}>
+              Next
+            </Button>
+          </div>
         </div>
       ) : (
         <Alert className="mt-8">
@@ -190,6 +251,7 @@ export default function ProductMarketplace() {
         onOpenChange={setIsFormOpen}
         onSubmit={handleSubmit}
         initialData={currentProduct!}
+        isLoading={loading}
         isEditing={isEditing}
       />
 
@@ -207,6 +269,7 @@ export default function ProductMarketplace() {
         isOpen={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
         product={currentProduct}
+        deleting={deleting}
         onConfirm={deleteProduct}
       />
     </div>

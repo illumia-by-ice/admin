@@ -45,7 +45,7 @@ export const SearchFilter: React.FC<SearchFilterProps> = ({
           </button>
         )}
       </div>
-      <Select value={filterTag} onValueChange={setFilterTag}>
+      {/* <Select value={filterTag} onValueChange={setFilterTag}>
         <SelectTrigger className="w-full md:w-48">
           <SelectValue placeholder="Filter by tag" />
         </SelectTrigger>
@@ -56,7 +56,7 @@ export const SearchFilter: React.FC<SearchFilterProps> = ({
             </SelectItem>
           ))}
         </SelectContent>
-      </Select>
+      </Select> */}
     </div>
   );
 };
