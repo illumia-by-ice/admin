@@ -40,8 +40,7 @@ export default function UsersPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
-  
-  // Get users data and functions from context
+    // Get users data and functions from context
   const {
     usersData,
     isLoading,
@@ -56,7 +55,9 @@ export default function UsersPage() {
     currentPage,
     setCurrentPage,
     refetchUsers,
-    handleDeleteUser
+    handleDeleteUser,
+    handleCreateUser,
+    handleUpdateUser
   } = useUsers();
 
   const formatDate = (dateString: string) => {
@@ -66,7 +67,6 @@ export default function UsersPage() {
       day: "numeric",
     });
   };
-
   // Placeholder handlers for add/edit user (to be connected to real API later)
   const handleAddUser = async (userData: CreateUserData): Promise<void> => {
     // This would be connected to an API call in the future
@@ -76,10 +76,9 @@ export default function UsersPage() {
   };
 
   const handleEditUser = async (userData: UpdateUserData): Promise<void> => {
-    // This would be connected to an API call in the future
-    console.log("Updating user:", userData);
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-    await refetchUsers();
+    if (selectedUser) {
+      await handleUpdateUser(selectedUser.id, userData);
+    }
   };
 
   const handleDelete = (userId: string) => {

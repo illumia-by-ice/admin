@@ -13,6 +13,12 @@ export interface User {
   user_type: string;
   last_login: string;
   created_at: string;
+  bio?: string;
+  services?: string;
+  address?: string;
+  city?: string;
+  available?: boolean;
+  subscription_id?: string;
 }
 
 export interface PaginatedUsersResponse {
@@ -94,6 +100,7 @@ export interface CreateUserData {
   phone: string;
   user_type: string;
   password?: string;
+  bio?:string;
 }
 
 /**
@@ -105,8 +112,15 @@ export interface UpdateUserData {
   last_name?: string;
   phone?: string;
   user_type?: string;
-  verified?: boolean;
-  verification_status?: string;
+//   verified?: boolean;
+//   verification_status?: string;
+  password?: string;
+  bio?: string;
+  services?: string;
+  address?: string;
+  city?: string;
+  available?: boolean;
+  subscription_id?: string;
 }
 
 /**
