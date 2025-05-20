@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, type ReactNode } from "react"
+import { useState, type ReactNode, useEffect } from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
@@ -38,6 +38,7 @@ import { cn } from "@/lib/utils"
 import { useToast } from "@/hooks/use-toast"
 import { Input } from "@/components/ui/input"
 import { useTheme } from "next-themes"
+import { isAuthenticated, logoutAdmin } from "@/lib/api/auth"
 
 interface NavItemProps {
   href: string
@@ -64,16 +65,27 @@ function NavItem({ href, icon, title, isActive }: NavItemProps) {
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
+  const router = useRouter()
   const { toast } = useToast()
   const { setTheme, theme } = useTheme()
 
+  // Check authentication on component mount
+  useEffect(() => {
+    if (!isAuthenticated()) {
+      router.push("/login");
+    }
+  }, [router]);
+
   const handleLogout = () => {
+    // Use the logout function from our auth API
+    logoutAdmin();
+    
     toast({
       title: "Logged out",
       description: "You have been logged out successfully",
     })
-    // In a real app, you would handle actual logout logic here
-    window.location.href = "/login"
+    
+    router.push("/login");
   }
 
   const navItems = [
