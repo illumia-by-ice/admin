@@ -1,3 +1,5 @@
+"use client"
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
@@ -13,15 +15,56 @@ import {
   BarChart3,
   ArrowUpRight,
   ArrowDownRight,
+  RefreshCw,
+  AlertCircle,
+  Loader2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { useDashboard } from "@/lib/contexts/dashboard-context"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { 
+  User, 
+  Verification, 
+  Transaction, 
+  Advertisement 
+} from "@/lib/api/dashboard"
 
 export default function DashboardPage() {
+  const { dashboardData, isLoading, isError, error, refetch } = useDashboard();
+
+  // If there's an error, show an error message
+  if (isError && error) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground">Overview of your property management system</p>
+        </div>
+        
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error.message}</AlertDescription>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="mt-2" 
+            onClick={() => refetch()}
+          >
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Try Again
+          </Button>
+        </Alert>
+      </div>
+    )
+  }
+
+  // Use API data or fallback values
   const stats = [
     {
       title: "Total Users",
-      value: "2,853",
+      value: isLoading ? "Loading..." : dashboardData?.counts.users.toString() || "0",
       change: "+12.5%",
       trend: "up",
       icon: <Users className="h-5 w-5 text-muted-foreground" />,
@@ -29,7 +72,7 @@ export default function DashboardPage() {
     },
     {
       title: "Properties",
-      value: "1,245",
+      value: isLoading ? "Loading..." : dashboardData?.counts.properties.toString() || "0",
       change: "+8.3%",
       trend: "up",
       icon: <Home className="h-5 w-5 text-muted-foreground" />,
@@ -37,7 +80,7 @@ export default function DashboardPage() {
     },
     {
       title: "Products",
-      value: "842",
+      value: isLoading ? "Loading..." : dashboardData?.counts.products.toString() || "0",
       change: "+5.7%",
       trend: "up",
       icon: <ShoppingBag className="h-5 w-5 text-muted-foreground" />,
@@ -45,7 +88,7 @@ export default function DashboardPage() {
     },
     {
       title: "Reviews",
-      value: "3,721",
+      value: isLoading ? "Loading..." : dashboardData?.counts.reviews.toString() || "0",
       change: "-2.1%",
       trend: "down",
       icon: <FileText className="h-5 w-5 text-muted-foreground" />,
@@ -53,7 +96,7 @@ export default function DashboardPage() {
     },
     {
       title: "Notifications",
-      value: "156",
+      value: "156", // This data doesn't seem to be in the API response
       change: "+18.2%",
       trend: "up",
       icon: <Bell className="h-5 w-5 text-muted-foreground" />,
@@ -61,15 +104,15 @@ export default function DashboardPage() {
     },
     {
       title: "Transactions",
-      value: "₦4.2M",
+      value: isLoading ? "Loading..." : dashboardData?.counts.transactions.toString() || "0",
       change: "+7.4%",
       trend: "up",
       icon: <CreditCard className="h-5 w-5 text-muted-foreground" />,
-      description: "Total transaction value",
+      description: "Total transactions",
     },
     {
       title: "Pending Verifications",
-      value: "42",
+      value: isLoading ? "Loading..." : dashboardData?.counts.pendingVerifications.toString() || "0",
       change: "-5.3%",
       trend: "down",
       icon: <FileCheck className="h-5 w-5 text-muted-foreground" />,
@@ -77,58 +120,54 @@ export default function DashboardPage() {
     },
     {
       title: "Active Ads",
-      value: "18",
+      value: isLoading ? "Loading..." : dashboardData?.counts.advertisements.toString() || "0",
       change: "+22.8%",
       trend: "up",
       icon: <AdCircle className="h-5 w-5 text-muted-foreground" />,
       description: "Currently running ads",
     },
-  ]
+  ];
 
-  const recentActivities = [
+  // Generate activity items from API data once loaded
+  const recentActivities = !isLoading && dashboardData ? [
+    ...dashboardData.recentUsers.map((user: User) => ({
+      id: `user-${user.id}`,
+      type: "user_registered",
+      title: "New user registered",
+      description: `${user.name} registered as a ${user.role}`,
+      time: new Date(user.created_at).toLocaleString(),
+    })),
+    ...dashboardData.recentVerifications.map((verification: Verification) => ({
+      id: `verification-${verification.id}`,
+      type: "verification_approved",
+      title: `User verification ${verification.status}`,
+      description: `${verification.user?.name}'s documents have been ${verification.status}`,
+      time: new Date(verification.created_at).toLocaleString(),
+    })),
+    ...dashboardData.recentTransactions.map((transaction: Transaction) => ({
+      id: `transaction-${transaction.id}`,
+      type: "transaction_completed",
+      title: `${transaction.status === 'completed' ? 'Payment received' : 'Payment ' + transaction.status}`,
+      // description: `${transaction.user.name} - ${transaction.amount} ${transaction.currency} for ${transaction.type}`,
+      time: new Date(transaction.created_at).toLocaleString(),
+    })),
+    ...dashboardData.recentAds.map((ad: Advertisement) => ({
+      id: `ad-${ad.id}`,
+      type: "ad_created",
+      title: `Ad campaign ${ad.status}`,
+      description: `${ad.title} - ${ad.impressions} impressions, ${ad.clicks} clicks`,
+      time: new Date(ad.created_at).toLocaleString(),
+    })),
+  ].sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()).slice(0, 6) : [
+    // Placeholder items while loading
     {
       id: 1,
       type: "user_registered",
-      title: "New user registered",
-      description: "John Doe registered as a buyer",
-      time: "10 min ago",
-    },
-    {
-      id: 2,
-      type: "property_listed",
-      title: "New property listed",
-      description: "3-bedroom apartment in Lekki added by Jane Smith",
-      time: "25 min ago",
-    },
-    {
-      id: 3,
-      type: "review_submitted",
-      title: "New review submitted",
-      description: "5-star review for Plumber service by Michael Brown",
-      time: "42 min ago",
-    },
-    {
-      id: 4,
-      type: "verification_approved",
-      title: "User verification approved",
-      description: "Sarah Johnson's documents have been verified",
-      time: "1 hour ago",
-    },
-    {
-      id: 5,
-      type: "transaction_completed",
-      title: "Subscription payment received",
-      description: "David Wilson upgraded to Premium plan",
-      time: "2 hours ago",
-    },
-    {
-      id: 6,
-      type: "ad_created",
-      title: "New ad campaign created",
-      description: "Premium Property Listing campaign started",
-      time: "3 hours ago",
-    },
-  ]
+      title: "Loading...",
+      description: "Loading recent activities...",
+      time: "Loading...",
+    }
+  ];
 
   return (
     <div className="space-y-6">
@@ -217,9 +256,9 @@ export default function DashboardPage() {
                     <CardTitle>Recent Activity</CardTitle>
                     <CardDescription>Latest activities across the platform</CardDescription>
                   </div>
-                  <Button variant="outline" size="sm" asChild>
+                  {/* <Button variant="outline" size="sm" asChild>
                     <Link href="/dashboard/notifications">View All</Link>
-                  </Button>
+                  </Button> */}
                 </div>
               </CardHeader>
               <CardContent className="p-6">
@@ -243,7 +282,7 @@ export default function DashboardPage() {
                       ></div>
                       <div className="flex-1 space-y-1">
                         <p className="text-sm font-medium leading-none">{activity.title}</p>
-                        <p className="text-sm text-muted-foreground">{activity.description}</p>
+                        {/* <p className="text-sm text-muted-foreground">{activity.description}</p> */}
                       </div>
                       <div className="text-xs text-muted-foreground whitespace-nowrap">{activity.time}</div>
                     </div>
@@ -269,7 +308,9 @@ export default function DashboardPage() {
                   <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
                     <div className="h-2 rounded-full bg-green-500" style={{ width: "75%" }}></div>
                   </div>
-                  <p className="text-xs text-muted-foreground">2,853 total users (853 new this month)</p>
+                  <p className="text-xs text-muted-foreground">
+                    {isLoading ? "loading": `${dashboardData?.counts.users || 0}`} total users
+                  </p>
                 </div>
 
                 <div className="space-y-2">
@@ -283,7 +324,9 @@ export default function DashboardPage() {
                   <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
                     <div className="h-2 rounded-full bg-blue-500" style={{ width: "65%" }}></div>
                   </div>
-                  <p className="text-xs text-muted-foreground">1,245 total listings (103 new this month)</p>
+                  <p className="text-xs text-muted-foreground">
+                    {isLoading ? "Loading..." : `${dashboardData?.counts.properties || 0}`} total listings
+                  </p>
                 </div>
 
                 <div className="space-y-2">
@@ -297,12 +340,20 @@ export default function DashboardPage() {
                   <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
                     <div className="h-2 rounded-full bg-purple-500" style={{ width: "45%" }}></div>
                   </div>
-                  <p className="text-xs text-muted-foreground">68% of users verified (42 pending)</p>
+                  <p className="text-xs text-muted-foreground">
+                    {isLoading ? "Loading..." : `${dashboardData?.counts.pendingVerifications || 0}`} pending
+                  </p>
                 </div>
 
                 <div className="pt-4">
-                  <Button variant="outline" size="sm" className="w-full" asChild>
-                    <Link href="/dashboard/analytics">View Detailed Analytics</Link>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full flex items-center justify-center gap-2"
+                    onClick={() => refetch()}
+                  >
+                    <RefreshCw className="h-3 w-3" />
+                    Refresh Data
                   </Button>
                 </div>
               </CardContent>
