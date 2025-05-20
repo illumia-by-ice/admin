@@ -14,123 +14,144 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { MoreHorizontal, Search, UserPlus, Filter, CheckCircle, XCircle } from "lucide-react"
+import { 
+  MoreHorizontal, 
+  Search, 
+  UserPlus, 
+  Filter, 
+  CheckCircle, 
+  XCircle, 
+  Loader2, 
+  AlertCircle 
+} from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useToast } from "@/hooks/use-toast"
-
-// Mock data for users
-const mockUsers = [
-  {
-    id: "1",
-    email: "john.doe@example.com",
-    first_name: "John",
-    last_name: "Doe",
-    phone: "+2348012345678",
-    verified: true,
-    user_type: "buyer",
-    created_at: "2023-05-10T10:00:00Z",
-  },
-  {
-    id: "2",
-    email: "jane.smith@example.com",
-    first_name: "Jane",
-    last_name: "Smith",
-    phone: "+2348023456789",
-    verified: true,
-    user_type: "agent",
-    created_at: "2023-06-15T14:30:00Z",
-  },
-  {
-    id: "3",
-    email: "michael.brown@example.com",
-    first_name: "Michael",
-    last_name: "Brown",
-    phone: "+2348034567890",
-    verified: false,
-    user_type: "vendor",
-    created_at: "2023-07-20T09:15:00Z",
-  },
-  {
-    id: "4",
-    email: "sarah.johnson@example.com",
-    first_name: "Sarah",
-    last_name: "Johnson",
-    phone: "+2348045678901",
-    verified: true,
-    user_type: "artisan",
-    created_at: "2023-08-05T16:45:00Z",
-  },
-  {
-    id: "5",
-    email: "david.wilson@example.com",
-    first_name: "David",
-    last_name: "Wilson",
-    phone: "+2348056789012",
-    verified: false,
-    user_type: "buyer",
-    created_at: "2023-09-12T11:20:00Z",
-  },
-  {
-    id: "6",
-    email: "admin@example.com",
-    first_name: "Admin",
-    last_name: "User",
-    phone: "+2348067890123",
-    verified: true,
-    user_type: "admin",
-    created_at: "2023-04-01T08:00:00Z",
-  },
-]
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { UserFormModal } from "@/components/users/user-form-modal"
+import { ConfirmDeleteDialog } from "@/components/users/confirm-delete-dialog"
+import { useUsers } from "@/lib/contexts/users-context"
+import { CreateUserData, UpdateUserData, User } from "@/lib/api/users"
 
 export default function UsersPage() {
-  const [users, setUsers] = useState(mockUsers)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [userTypeFilter, setUserTypeFilter] = useState("all")
-  const [verificationFilter, setVerificationFilter] = useState("all")
-  const { toast } = useToast()
+  // State for modal controls
+  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
+  const [isEditUserModalOpen, setIsEditUserModalOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
+  
+  // Get users data and functions from context
+  const {
+    usersData,
+    isLoading,
+    isError,
+    error,
+    searchTerm,
+    userTypeFilter,
+    verificationFilter,
+    setSearchTerm,
+    setUserTypeFilter,
+    setVerificationFilter,
+    currentPage,
+    setCurrentPage,
+    refetchUsers,
+    handleDeleteUser
+  } = useUsers();
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
       month: "short",
       day: "numeric",
-    })
+    });
+  };
+
+  // Placeholder handlers for add/edit user (to be connected to real API later)
+  const handleAddUser = async (userData: CreateUserData): Promise<void> => {
+    // This would be connected to an API call in the future
+    console.log("Creating user:", userData);
+    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+    await refetchUsers();
+  };
+
+  const handleEditUser = async (userData: UpdateUserData): Promise<void> => {
+    // This would be connected to an API call in the future
+    console.log("Updating user:", userData);
+    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+    await refetchUsers();
+  };
+
+  const handleDelete = (userId: string) => {
+    setDeletingUserId(userId);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (deletingUserId) {
+      await handleDeleteUser(deletingUserId);
+    }
+  };
+
+  const openEditModal = (user: User) => {
+    setSelectedUser(user);
+    setIsEditUserModalOpen(true);
+  };
+
+  // Generate pagination links
+  const generatePagination = () => {
+    if (!usersData?.meta) return null;
+    
+    const { page, totalPages } = usersData.meta;
+    const pages = [];
+    
+    // Always show first page
+    if (page > 3) {
+      pages.push(1);
+      if (page > 4) pages.push('...');
+    }
+    
+    // Show pages around current page
+    for (let i = Math.max(1, page - 1); i <= Math.min(totalPages, page + 1); i++) {
+      pages.push(i);
+    }
+    
+    // Always show last page
+    if (page < totalPages - 2) {
+      if (page < totalPages - 3) pages.push('...');
+      pages.push(totalPages);
+    }
+    
+    return pages;
+  };
+
+  // Show error state if there's an error
+  if (isError && error) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Users</h1>
+            <p className="text-muted-foreground">Manage and monitor user accounts</p>
+          </div>
+        </div>
+        
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error.message}</AlertDescription>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="mt-2" 
+            onClick={() => refetchUsers()}
+          >
+            Try Again
+          </Button>
+        </Alert>
+      </div>
+    );
   }
-
-  const handleVerifyUser = (userId: string) => {
-    setUsers(users.map((user) => (user.id === userId ? { ...user, verified: true } : user)))
-    toast({
-      title: "User Verified",
-      description: "User has been successfully verified",
-    })
-  }
-
-  const handleDeleteUser = (userId: string) => {
-    setUsers(users.filter((user) => user.id !== userId))
-    toast({
-      title: "User Deleted",
-      description: "User has been successfully deleted",
-      variant: "destructive",
-    })
-  }
-
-  const filteredUsers = users.filter((user) => {
-    const matchesSearch =
-      user.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.phone.includes(searchTerm)
-
-    const matchesUserType = userTypeFilter === "all" || user.user_type === userTypeFilter
-
-    const matchesVerification =
-      verificationFilter === "all" ||
-      (verificationFilter === "verified" && user.verified) ||
-      (verificationFilter === "unverified" && !user.verified)
-
-    return matchesSearch && matchesUserType && matchesVerification
-  })
 
   return (
     <div className="space-y-6">
@@ -139,10 +160,10 @@ export default function UsersPage() {
           <h1 className="text-3xl font-bold tracking-tight">Users</h1>
           <p className="text-muted-foreground">Manage and monitor user accounts</p>
         </div>
-        <Button className="sm:w-auto">
+        {/* <Button className="sm:w-auto" onClick={() => setIsAddUserModalOpen(true)}>
           <UserPlus className="mr-2 h-4 w-4" />
           Add User
-        </Button>
+        </Button> */}
       </div>
 
       <Card>
@@ -186,12 +207,12 @@ export default function UsersPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Status</SelectItem>
-                      <SelectItem value="verified">Verified</SelectItem>
-                      <SelectItem value="unverified">Unverified</SelectItem>
+                      <SelectItem value="false">Unverified</SelectItem>
+                      <SelectItem value="true">Verified</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                <Button variant="outline" size="icon">
+                <Button variant="outline" size="icon" onClick={() => refetchUsers()}>
                   <Filter className="h-4 w-4" />
                 </Button>
               </div>
@@ -210,14 +231,23 @@ export default function UsersPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredUsers.length === 0 ? (
+                  {isLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="h-24 text-center">
+                        <div className="flex justify-center items-center">
+                          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                          <span className="ml-2">Loading users...</span>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ) : usersData?.data.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={6} className="h-24 text-center">
                         No users found.
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredUsers.map((user) => (
+                    usersData?.data.map((user) => (
                       <TableRow key={user.id}>
                         <TableCell className="font-medium">
                           <div className="flex items-center gap-3">
@@ -267,7 +297,7 @@ export default function UsersPage() {
                           ) : (
                             <div className="flex items-center gap-1 text-amber-600">
                               <XCircle className="h-4 w-4" />
-                              <span>Unverified</span>
+                              <span>{"Unverified"}</span>
                             </div>
                           )}
                         </TableCell>
@@ -282,27 +312,28 @@ export default function UsersPage() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                              <DropdownMenuItem
+                              {/* <DropdownMenuItem
                                 onClick={() => {
                                   window.location.href = `/dashboard/users/${user.id}`
                                 }}
                               >
                                 View details
-                              </DropdownMenuItem>
+                              </DropdownMenuItem> */}
                               <DropdownMenuItem
-                                onClick={() => {
-                                  window.location.href = `/dashboard/users/${user.id}/edit`
-                                }}
+                                onClick={() => openEditModal(user)}
                               >
                                 Edit user
                               </DropdownMenuItem>
-                              <DropdownMenuSeparator />
+                              {/* <DropdownMenuSeparator />
                               {!user.verified && (
-                                <DropdownMenuItem onClick={() => handleVerifyUser(user.id)}>
-                                  Verify user
+                                <DropdownMenuItem onClick={() => openEditModal(user)}>
+                                  Update verification
                                 </DropdownMenuItem>
-                              )}
-                              <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteUser(user.id)}>
+                              )} */}
+                              <DropdownMenuItem 
+                                className="text-red-600" 
+                                onClick={() => handleDelete(user.id)}
+                              >
                                 Delete user
                               </DropdownMenuItem>
                             </DropdownMenuContent>
@@ -314,9 +345,90 @@ export default function UsersPage() {
                 </TableBody>
               </Table>
             </div>
+
+            {usersData?.meta && usersData.meta.totalPages > 1 && (
+              <div className="flex justify-center mt-4">
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious 
+                        href="#" 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (currentPage > 1) setCurrentPage(currentPage - 1);
+                        }}
+                        className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                      />
+                    </PaginationItem>
+                    
+                    {generatePagination()?.map((page, index) => (
+                      <PaginationItem key={index}>
+                        {page === '...' ? (
+                          <span className="px-4 py-2">...</span>
+                        ) : (
+                          <PaginationLink 
+                            href="#" 
+                            onClick={(e) => {
+                              e.preventDefault();
+                              setCurrentPage(page as number);
+                            }}
+                            isActive={currentPage === page}
+                          >
+                            {page}
+                          </PaginationLink>
+                        )}
+                      </PaginationItem>
+                    ))}
+                    
+                    <PaginationItem>
+                      <PaginationNext 
+                        href="#" 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (currentPage < usersData.meta.totalPages) setCurrentPage(currentPage + 1);
+                        }}
+                        className={currentPage === usersData.meta.totalPages ? "pointer-events-none opacity-50" : ""}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
+
+      {/* Add User Modal */}
+      {/* <UserFormModal
+        isOpen={isAddUserModalOpen}
+        onClose={() => setIsAddUserModalOpen(false)}
+        onSubmit={handleAddUser}
+      /> */}
+
+      {/* Edit User Modal */}
+      {selectedUser && (
+        <UserFormModal
+          isOpen={isEditUserModalOpen}
+          onClose={() => {
+            setIsEditUserModalOpen(false);
+            setSelectedUser(null);
+          }}
+          user={selectedUser}
+          onSubmit={handleEditUser}
+        />
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDeleteDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={() => {
+          setIsDeleteDialogOpen(false);
+          setDeletingUserId(null);
+        }}
+        onConfirm={confirmDelete}
+        title="Delete User"
+        description="Are you sure you want to delete this user? This action cannot be undone and will permanently remove the user and all associated data."
+      />
     </div>
-  )
+  );
 }
