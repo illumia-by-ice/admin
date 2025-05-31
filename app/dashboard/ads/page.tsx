@@ -43,109 +43,100 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
-
-// Mock data for ads
-const mockAds = [
-  {
-    id: "1",
-    title: "Premium Property Listing",
-    description: "Get your property featured at the top of search results",
-    image_url: "/placeholder.svg?height=300&width=600",
-    target_url: "https://example.com/premium-listing",
-    status: "active",
-    placement: "homepage",
-    start_date: "2023-04-15T00:00:00Z",
-    end_date: "2023-07-15T00:00:00Z",
-    impressions: 12450,
-    clicks: 348,
-    ctr: 2.8,
-    cost: 45000,
-    currency: "NGN",
-  },
-  {
-    id: "2",
-    title: "Artisan Services Promotion",
-    description: "Promote your artisan services to thousands of potential customers",
-    image_url: "/placeholder.svg?height=300&width=600",
-    target_url: "https://example.com/artisan-promo",
-    status: "active",
-    placement: "search_results",
-    start_date: "2023-05-01T00:00:00Z",
-    end_date: "2023-08-01T00:00:00Z",
-    impressions: 8320,
-    clicks: 215,
-    ctr: 2.6,
-    cost: 30000,
-    currency: "NGN",
-  },
-  {
-    id: "3",
-    title: "Property Agent Spotlight",
-    description: "Highlight your profile as a trusted property agent",
-    image_url: "/placeholder.svg?height=300&width=600",
-    target_url: "https://example.com/agent-spotlight",
-    status: "paused",
-    placement: "property_details",
-    start_date: "2023-03-10T00:00:00Z",
-    end_date: "2023-09-10T00:00:00Z",
-    impressions: 5640,
-    clicks: 187,
-    ctr: 3.3,
-    cost: 35000,
-    currency: "NGN",
-  },
-  {
-    id: "4",
-    title: "New Property Listings Alert",
-    description: "Be the first to know about new properties in your area",
-    image_url: "/placeholder.svg?height=300&width=600",
-    target_url: "https://example.com/new-listings",
-    status: "scheduled",
-    placement: "email",
-    start_date: "2023-06-01T00:00:00Z",
-    end_date: "2023-09-01T00:00:00Z",
-    impressions: 0,
-    clicks: 0,
-    ctr: 0,
-    cost: 25000,
-    currency: "NGN",
-  },
-  {
-    id: "5",
-    title: "Vendor Special Offer",
-    description: "Limited time offer for property vendors",
-    image_url: "/placeholder.svg?height=300&width=600",
-    target_url: "https://example.com/vendor-offer",
-    status: "ended",
-    placement: "sidebar",
-    start_date: "2023-02-15T00:00:00Z",
-    end_date: "2023-05-15T00:00:00Z",
-    impressions: 9870,
-    clicks: 412,
-    ctr: 4.2,
-    cost: 40000,
-    currency: "NGN",
-  },
-]
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { getAds, updateAd, deleteAd, addAdImage, deleteAdImage, Ad, createAd } from "@/lib/api/dashboard"
+import { useForm } from "react-hook-form"
 
 export default function AdsPage() {
-  const [ads, setAds] = useState(mockAds)
+  const queryClient = useQueryClient()
+  const { toast } = useToast()
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [placementFilter, setPlacementFilter] = useState("all")
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
-  const [newAd, setNewAd] = useState({
-    title: "",
-    description: "",
-    image_url: "/placeholder.svg?height=300&width=600",
-    target_url: "",
-    placement: "homepage",
-    start_date: "",
-    end_date: "",
-    cost: "",
-    currency: "NGN",
+  const [imageUploadAdId, setImageUploadAdId] = useState<string | null>(null)
+  const [imageFile, setImageFile] = useState<File | null>(null)
+
+  // React Hook Form for ad creation
+  const { register, handleSubmit, reset, formState: { errors } } = useForm()
+
+  const {
+    data: adsData,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ["ads", { searchTerm, statusFilter, placementFilter }],
+    queryFn: () =>
+      getAds({
+        search: searchTerm,
+        status: statusFilter === "all" ? undefined : statusFilter,
+        placement: placementFilter === "all" ? undefined : placementFilter,
+      }),
+    staleTime: 60000,
+    refetchOnWindowFocus: false,
   })
-  const { toast } = useToast()
+
+  const createAdMutation = useMutation({
+    mutationFn: async (data: any) => {
+      // expects FormData with title, description, cta, cta_link
+      return await createAd(data) // replace with correct POST endpoint if needed
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ads"] })
+      toast({ title: "Ad Created", description: "Your ad has been created successfully" })
+      setIsCreateDialogOpen(false)
+      reset()
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message || "Failed to create ad", variant: "destructive" })
+    },
+  })
+
+  const deleteAdMutation = useMutation({
+    mutationFn: deleteAd,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ads"] })
+      toast({ title: "Ad Deleted", description: "The ad has been deleted successfully", variant: "destructive" })
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message || "Failed to delete ad", variant: "destructive" })
+    },
+  })
+
+  const updateAdMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string, data: any }) => updateAd(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ads"] })
+      toast({ title: "Ad Updated", description: "The ad has been updated successfully" })
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message || "Failed to update ad", variant: "destructive" })
+    },
+  })
+
+  const addAdImageMutation = useMutation({
+    mutationFn: ({ adId, file }: { adId: string; file: File }) => addAdImage(adId, file),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ads"] })
+      toast({ title: "Image Uploaded", description: "Ad image uploaded successfully" })
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message || "Failed to upload image", variant: "destructive" })
+    },
+  })
+
+  const deleteAdImageMutation = useMutation({
+    mutationFn: ({ adId, imageId }: { adId: string; imageId: string }) => deleteAdImage(adId, imageId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ads"] })
+      toast({ title: "Image Deleted", description: "Ad image deleted successfully", variant: "destructive" })
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message || "Failed to delete image", variant: "destructive" })
+    },
+  })
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -159,86 +150,27 @@ export default function AdsPage() {
     return currency === "NGN" ? `₦${amount.toLocaleString()}` : `$${amount.toLocaleString()}`
   }
 
-  const handleCreateAd = () => {
-    // Validate form
-    if (
-      !newAd.title ||
-      !newAd.description ||
-      !newAd.target_url ||
-      !newAd.start_date ||
-      !newAd.end_date ||
-      !newAd.cost
-    ) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      })
-      return
-    }
-
-    const createdAd = {
-      id: `${ads.length + 1}`,
-      ...newAd,
-      status: "scheduled",
-      impressions: 0,
-      clicks: 0,
-      ctr: 0,
-      cost: Number.parseFloat(newAd.cost),
-    }
-
-    setAds([createdAd, ...ads])
-    setIsCreateDialogOpen(false)
-    setNewAd({
-      title: "",
-      description: "",
-      image_url: "/placeholder.svg?height=300&width=600",
-      target_url: "",
-      placement: "homepage",
-      start_date: "",
-      end_date: "",
-      cost: "",
-      currency: "NGN",
-    })
-
-    toast({
-      title: "Ad Created",
-      description: "Your ad has been created successfully",
-    })
-  }
-
-  const handleDeleteAd = (adId: string) => {
-    setAds(ads.filter((ad) => ad.id !== adId))
-    toast({
-      title: "Ad Deleted",
-      description: "The ad has been deleted successfully",
-      variant: "destructive",
-    })
-  }
-
-  const handleToggleAdStatus = (adId: string, currentStatus: string) => {
-    const newStatus = currentStatus === "active" ? "paused" : "active"
-
-    setAds(ads.map((ad) => (ad.id === adId ? { ...ad, status: newStatus } : ad)))
-
-    toast({
-      title: `Ad ${newStatus === "active" ? "Activated" : "Paused"}`,
-      description: `The ad has been ${newStatus === "active" ? "activated" : "paused"} successfully`,
-    })
-  }
-
-  const filteredAds = ads.filter((ad) => {
+  // Remove all local state for ads and ad creation
+  // Use only adsData for rendering and filtering
+  const filteredAds = adsData?.data?.filter((ad) => {
     const matchesSearch = ad.title.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesStatus = statusFilter === "all" || ad.status === statusFilter
     const matchesPlacement = placementFilter === "all" || ad.placement === placementFilter
-
     return matchesSearch && matchesStatus && matchesPlacement
-  })
+  }) || []
 
-  const activeAds = filteredAds.filter((ad) => ad.status === "active")
-  const scheduledAds = filteredAds.filter((ad) => ad.status === "scheduled")
-  const pausedAds = filteredAds.filter((ad) => ad.status === "paused")
-  const endedAds = filteredAds.filter((ad) => ad.status === "ended")
+  // Ad creation handler
+  const onCreateAd = (formData: any) => {
+    const data = new FormData()
+    data.append("title", formData.title)
+    data.append("description", formData.description)
+    data.append("cta", formData.cta)
+    data.append("cta_link", formData.cta_link)
+    if (formData.image && formData.image[0]) {
+      data.append("images", formData.image[0])
+    }
+    createAdMutation.mutate(data)
+  }
 
   return (
     <div className="space-y-6">
@@ -253,14 +185,14 @@ export default function AdsPage() {
         </Button>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      {/* <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Active Ads</CardTitle>
             <CheckCircle className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{activeAds.length}</div>
+            <div className="text-2xl font-bold">{filteredAds.filter(ad => ad.status === 'active').length}</div>
             <p className="text-xs text-muted-foreground">Currently running ads</p>
           </CardContent>
         </Card>
@@ -270,7 +202,7 @@ export default function AdsPage() {
             <Clock className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{scheduledAds.length}</div>
+            <div className="text-2xl font-bold">{filteredAds.filter(ad => ad.status === 'scheduled').length}</div>
             <p className="text-xs text-muted-foreground">Ads waiting to start</p>
           </CardContent>
         </Card>
@@ -280,7 +212,7 @@ export default function AdsPage() {
             <PauseCircle className="h-4 w-4 text-amber-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{pausedAds.length}</div>
+            <div className="text-2xl font-bold">{filteredAds.filter(ad => ad.status === 'paused').length}</div>
             <p className="text-xs text-muted-foreground">Temporarily paused ads</p>
           </CardContent>
         </Card>
@@ -290,11 +222,11 @@ export default function AdsPage() {
             <XCircle className="h-4 w-4 text-gray-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{endedAds.length}</div>
+            <div className="text-2xl font-bold">{filteredAds.filter(ad => ad.status === 'ended').length}</div>
             <p className="text-xs text-muted-foreground">Completed ad campaigns</p>
           </CardContent>
         </Card>
-      </div>
+      </div> */}
 
       <Card>
         <CardHeader>
@@ -302,196 +234,94 @@ export default function AdsPage() {
           <CardDescription>View and manage all your advertising campaigns</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <div className="flex flex-col gap-4 sm:flex-row">
-              <div className="relative flex-1">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="search"
-                  placeholder="Search ads..."
-                  className="pl-8"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-              <div className="flex gap-2">
-                <div className="w-[180px]">
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Filter by status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Status</SelectItem>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="paused">Paused</SelectItem>
-                      <SelectItem value="scheduled">Scheduled</SelectItem>
-                      <SelectItem value="ended">Ended</SelectItem>
-                    </SelectContent>
-                  </Select>
+          {isLoading ? (
+            <div>Loading ads...</div>
+          ) : isError ? (
+            <div>Error loading ads: {error?.message}</div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex flex-col gap-4 sm:flex-row">
+                <div className="relative flex-1">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="search"
+                    placeholder="Search ads..."
+                    className="pl-8"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
                 </div>
-                <div className="w-[180px]">
-                  <Select value={placementFilter} onValueChange={setPlacementFilter}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Filter by placement" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Placements</SelectItem>
-                      <SelectItem value="homepage">Homepage</SelectItem>
-                      <SelectItem value="search_results">Search Results</SelectItem>
-                      <SelectItem value="property_details">Property Details</SelectItem>
-                      <SelectItem value="sidebar">Sidebar</SelectItem>
-                      <SelectItem value="email">Email</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="flex gap-2">
+                  <div className="w-[180px]">
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Filter by status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Status</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="w-[180px]">
+                    <Select value={placementFilter} onValueChange={setPlacementFilter}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Filter by placement" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Placements</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Ad Campaign</TableHead>
-                    <TableHead>Placement</TableHead>
-                    <TableHead>Duration</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Performance</TableHead>
-                    <TableHead>Cost</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredAds.length === 0 ? (
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={7} className="h-24 text-center">
-                        No ads found.
-                      </TableCell>
+                      <TableHead>Title</TableHead>
+                      {/* <TableHead>Placement</TableHead> */}
+                      {/* <TableHead>Status</TableHead> */}
+                      <TableHead>Images</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
-                  ) : (
-                    filteredAds.map((ad) => (
-                      <TableRow key={ad.id}>
-                        <TableCell className="font-medium">
-                          <div className="flex items-center gap-3">
-                            <div className="h-10 w-16 overflow-hidden rounded bg-muted">
-                              <img
-                                src={ad.image_url || "/placeholder.svg"}
-                                alt={ad.title}
-                                className="h-full w-full object-cover"
-                              />
-                            </div>
-                            <div>
-                              <div className="font-medium">{ad.title}</div>
-                              <div className="text-sm text-muted-foreground line-clamp-1">{ad.description}</div>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">
-                            {ad.placement.replace("_", " ").replace(/\b\w/g, (l) => l.toUpperCase())}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
-                            <Calendar className="h-4 w-4 text-muted-foreground" />
-                            <span>
-                              {formatDate(ad.start_date)} - {formatDate(ad.end_date)}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant="outline"
-                            className={
-                              ad.status === "active"
-                                ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                                : ad.status === "paused"
-                                  ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400"
-                                  : ad.status === "scheduled"
-                                    ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
-                                    : "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400"
-                            }
-                          >
-                            {ad.status.charAt(0).toUpperCase() + ad.status.slice(1)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {ad.status === "scheduled" ? (
-                            <span className="text-muted-foreground">Not started</span>
-                          ) : (
-                            <div className="space-y-1">
-                              <div className="flex items-center justify-between text-sm">
-                                <span>Impressions: {ad.impressions.toLocaleString()}</span>
-                                <span>Clicks: {ad.clicks.toLocaleString()}</span>
-                              </div>
-                              <div className="flex items-center gap-1 text-sm">
-                                <BarChart3 className="h-4 w-4 text-muted-foreground" />
-                                <span>CTR: {ad.ctr}%</span>
-                              </div>
-                            </div>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
-                            <DollarSign className="h-4 w-4 text-muted-foreground" />
-                            <span>{formatCurrency(ad.cost, ad.currency)}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" className="h-8 w-8 p-0">
-                                <span className="sr-only">Open menu</span>
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  window.location.href = `/dashboard/ads/${ad.id}`
-                                }}
-                              >
-                                <Eye className="mr-2 h-4 w-4" />
-                                View details
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  window.location.href = `/dashboard/ads/${ad.id}/edit`
-                                }}
-                              >
-                                <Edit className="mr-2 h-4 w-4" />
-                                Edit ad
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              {(ad.status === "active" || ad.status === "paused") && (
-                                <DropdownMenuItem onClick={() => handleToggleAdStatus(ad.id, ad.status)}>
-                                  {ad.status === "active" ? (
-                                    <>
-                                      <PauseCircle className="mr-2 h-4 w-4" />
-                                      Pause ad
-                                    </>
-                                  ) : (
-                                    <>
-                                      <CheckCircle className="mr-2 h-4 w-4" />
-                                      Activate ad
-                                    </>
-                                  )}
-                                </DropdownMenuItem>
-                              )}
-                              <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteAd(ad.id)}>
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Delete ad
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredAds.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="h-24 text-center">No ads found.</TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+                    ) : (
+                      filteredAds.map((ad) => (
+                        <TableRow key={ad.id}>
+                          <TableCell>{ad.title}</TableCell>
+                          <TableCell>
+                            {ad.images?.map((img) => (
+                              <div key={img.id} className="inline-block mr-2 relative">
+                                <img src={img.src} alt={img.name} className="h-10 w-16 object-cover rounded" />
+                                <Button size="icon" variant="ghost" onClick={() => deleteAdImageMutation.mutate({ adId: ad.id, imageId: img.id })}>
+                                  <Trash2 className="h-4 w-4 text-red-500" />
+                                </Button>
+                              </div>
+                            ))}
+                            {/* <Input type="file" onChange={e => {
+                              if (e.target.files && e.target.files[0]) {
+                                addAdImageMutation.mutate({ adId: ad.id, file: e.target.files[0] })
+                              }
+                            }} /> */}
+                          </TableCell>
+                          <TableCell>
+                            <Button variant="outline" className="mx-3" onClick={() => updateAdMutation.mutate({ id: ad.id, data: { title: ad.title, description: ad.description, cta: ad.cta, cta_link: ad.cta_link } })}>Edit</Button>
+                            <Button variant="destructive" onClick={() => deleteAdMutation.mutate(ad.id)}>Delete</Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
-          </div>
+          )}
         </CardContent>
       </Card>
 
@@ -501,123 +331,39 @@ export default function AdsPage() {
             <DialogTitle>Create New Ad</DialogTitle>
             <DialogDescription>Fill in the details to create a new advertising campaign</DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
+          <form onSubmit={handleSubmit(onCreateAd)} className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label htmlFor="title">Ad Title</Label>
-              <Input
-                id="title"
-                placeholder="Enter ad title"
-                value={newAd.title}
-                onChange={(e) => setNewAd({ ...newAd, title: e.target.value })}
-              />
+              <Input id="title" placeholder="Enter ad title" {...register("title", { required: true })} />
+              {errors.title && <span className="text-red-500 text-xs">Title is required</span>}
             </div>
             <div className="grid gap-2">
               <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                placeholder="Enter ad description"
-                value={newAd.description}
-                onChange={(e) => setNewAd({ ...newAd, description: e.target.value })}
-              />
+              <Textarea id="description" placeholder="Enter ad description" {...register("description", { required: true })} />
+              {errors.description && <span className="text-red-500 text-xs">Description is required</span>}
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="target_url">Target URL</Label>
-              <div className="flex items-center gap-2">
-                <LinkIcon className="h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="target_url"
-                  placeholder="https://example.com/landing-page"
-                  value={newAd.target_url}
-                  onChange={(e) => setNewAd({ ...newAd, target_url: e.target.value })}
-                />
-              </div>
+              <Label htmlFor="cta">CTA</Label>
+              <Input id="cta" placeholder="Enter call to action" {...register("cta", { required: true })} />
+              {errors.cta && <span className="text-red-500 text-xs">CTA is required</span>}
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="cta_link">CTA Link</Label>
+              <Input id="cta_link" placeholder="https://example.com" {...register("cta_link", { required: true })} />
+              {errors.cta_link && <span className="text-red-500 text-xs">CTA Link is required</span>}
             </div>
             <div className="grid gap-2">
               <Label htmlFor="image">Ad Image</Label>
-              <div className="flex items-center gap-2">
-                <div className="h-20 w-32 overflow-hidden rounded border bg-muted">
-                  <img
-                    src={newAd.image_url || "/placeholder.svg"}
-                    alt="Ad preview"
-                    className="h-full w-full object-cover"
-                  />
-                </div>
-                <Button variant="outline" className="h-10">
-                  <ImageIcon className="mr-2 h-4 w-4" />
-                  Upload Image
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground">Recommended size: 1200x600px. Max file size: 2MB</p>
+              <Input id="image" type="file" accept="image/*" {...register("image", { required: true })} />
+              {errors.image && <span className="text-red-500 text-xs">Image is required</span>}
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="placement">Placement</Label>
-                <Select value={newAd.placement} onValueChange={(value) => setNewAd({ ...newAd, placement: value })}>
-                  <SelectTrigger id="placement">
-                    <SelectValue placeholder="Select placement" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="homepage">Homepage</SelectItem>
-                    <SelectItem value="search_results">Search Results</SelectItem>
-                    <SelectItem value="property_details">Property Details</SelectItem>
-                    <SelectItem value="sidebar">Sidebar</SelectItem>
-                    <SelectItem value="email">Email</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="currency">Currency</Label>
-                <Select value={newAd.currency} onValueChange={(value) => setNewAd({ ...newAd, currency: value })}>
-                  <SelectTrigger id="currency">
-                    <SelectValue placeholder="Select currency" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="NGN">Nigerian Naira (₦)</SelectItem>
-                    <SelectItem value="USD">US Dollar ($)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="start_date">Start Date</Label>
-                <Input
-                  id="start_date"
-                  type="date"
-                  value={newAd.start_date}
-                  onChange={(e) => setNewAd({ ...newAd, start_date: e.target.value })}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="end_date">End Date</Label>
-                <Input
-                  id="end_date"
-                  type="date"
-                  value={newAd.end_date}
-                  onChange={(e) => setNewAd({ ...newAd, end_date: e.target.value })}
-                />
-              </div>
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="cost">Budget</Label>
-              <div className="flex items-center gap-2">
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="cost"
-                  type="number"
-                  placeholder="Enter campaign budget"
-                  value={newAd.cost}
-                  onChange={(e) => setNewAd({ ...newAd, cost: e.target.value })}
-                />
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleCreateAd}>Create Ad</Button>
-          </DialogFooter>
+            <DialogFooter>
+              <Button variant="outline" type="button" onClick={() => setIsCreateDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={createAdMutation.status === 'pending' || createAdMutation.isPending}>Create Ad</Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>

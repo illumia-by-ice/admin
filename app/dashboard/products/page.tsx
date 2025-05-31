@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import {
   DropdownMenu,
@@ -43,119 +43,30 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { 
+  getProducts, 
+  createProduct, 
+  updateProduct, 
+  deleteProduct,
+  type Product,
+  type ProductsResponse
+} from "@/lib/api/dashboard"
 import Link from "next/link"
-
-// Mock data for products
-const mockProducts = [
-  {
-    id: "1",
-    title: "Modern Sofa Set",
-    description: "Elegant 3-seater sofa with premium fabric upholstery.",
-    price: 150000,
-    currency: "NGN",
-    lat: 6.4351,
-    lon: 3.4501,
-    city: "Lagos",
-    address: "15 Admiralty Way, Lekki Phase 1",
-    type: "furniture",
-    user_id: "101",
-    user_name: "Jane Smith",
-    created_at: "2023-05-10T10:00:00Z",
-    rating: 4.5,
-    reviews: 12,
-    images: [
-      { id: "img1", src: "/placeholder.svg?height=600&width=800" },
-      { id: "img2", src: "/placeholder.svg?height=600&width=800" },
-    ],
-  },
-  {
-    id: "2",
-    title: "Professional Plumbing Services",
-    description: "Expert plumbing services for residential and commercial properties.",
-    price: 5000,
-    currency: "NGN",
-    lat: 6.4551,
-    lon: 3.3751,
-    city: "Lagos",
-    address: "10 Kofo Abayomi Street, Victoria Island",
-    type: "service",
-    user_id: "102",
-    user_name: "John Doe",
-    created_at: "2023-06-15T14:30:00Z",
-    rating: 4.8,
-    reviews: 24,
-    images: [{ id: "img3", src: "/placeholder.svg?height=600&width=800" }],
-  },
-  {
-    id: "3",
-    title: "Luxury Dining Table",
-    description: "Handcrafted wooden dining table with 6 chairs.",
-    price: 250000,
-    currency: "NGN",
-    lat: 6.4651,
-    lon: 3.5651,
-    city: "Lagos",
-    address: "7 Banana Island Road, Ikoyi",
-    type: "furniture",
-    user_id: "103",
-    user_name: "Michael Brown",
-    created_at: "2023-07-20T09:15:00Z",
-    rating: 4.2,
-    reviews: 8,
-    images: [
-      { id: "img4", src: "/placeholder.svg?height=600&width=800" },
-      { id: "img5", src: "/placeholder.svg?height=600&width=800" },
-    ],
-  },
-  {
-    id: "4",
-    title: "Interior Design Consultation",
-    description: "Professional interior design services for your home or office.",
-    price: 25000,
-    currency: "NGN",
-    lat: 6.5151,
-    lon: 3.3851,
-    city: "Abuja",
-    address: "12 Herbert Macaulay Way, Central District",
-    type: "service",
-    user_id: "104",
-    user_name: "Sarah Johnson",
-    created_at: "2023-08-05T16:45:00Z",
-    rating: 5.0,
-    reviews: 17,
-    images: [{ id: "img7", src: "/placeholder.svg?height=600&width=800" }],
-  },
-  {
-    id: "5",
-    title: "Smart Home Security System",
-    description: "Complete home security system with cameras and motion sensors.",
-    price: 120000,
-    currency: "NGN",
-    lat: 6.6051,
-    lon: 3.3551,
-    city: "Port Harcourt",
-    address: "5 Aba Road, GRA",
-    type: "electronics",
-    user_id: "105",
-    user_name: "David Wilson",
-    created_at: "2023-09-12T11:20:00Z",
-    rating: 4.7,
-    reviews: 9,
-    images: [
-      { id: "img8", src: "/placeholder.svg?height=600&width=800" },
-      { id: "img9", src: "/placeholder.svg?height=600&width=800" },
-    ],
-  },
-]
-
 export default function ProductsPage() {
-  const [products, setProducts] = useState(mockProducts)
+  const queryClient = useQueryClient()
+  const { toast } = useToast()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  
   const [searchTerm, setSearchTerm] = useState("")
   const [typeFilter, setTypeFilter] = useState("all")
   const [cityFilter, setCityFilter] = useState("all")
+  const [currentPage, setCurrentPage] = useState(1)
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
-  const [selectedProduct, setSelectedProduct] = useState<any>(null)
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
+  const [selectedImages, setSelectedImages] = useState<File[]>([])
+  const [imagePreviews, setImagePreviews] = useState<string[]>([])
   const [newProduct, setNewProduct] = useState({
     title: "",
     description: "",
@@ -165,7 +76,91 @@ export default function ProductsPage() {
     address: "",
     type: "furniture",
   })
-  const { toast } = useToast()
+
+  // Reset to first page when filters change
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value)
+    setCurrentPage(1)
+  }
+
+  const handleTypeFilterChange = (value: string) => {
+    setTypeFilter(value)
+    setCurrentPage(1)
+  }
+
+  const handleCityFilterChange = (value: string) => {
+    setCityFilter(value)
+    setCurrentPage(1)
+  }
+
+  // Fetch products with React Query
+  const { data: productsData, isLoading, isError, error } = useQuery({
+    queryKey: ["products", currentPage, typeFilter, cityFilter, searchTerm],
+    queryFn: () => getProducts({
+      page: currentPage,
+      limit: 10,
+      type: typeFilter !== "all" ? typeFilter : undefined,
+      city: cityFilter !== "all" ? cityFilter : undefined,
+      search: searchTerm || undefined,
+    }),
+    staleTime: 60000,
+    refetchOnWindowFocus: false,
+  })
+
+  const createProductMutation = useMutation({
+    mutationFn: (formData: FormData) => createProduct(formData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["products"] })
+      setIsCreateDialogOpen(false)
+      setNewProduct({
+        title: "",
+        description: "",
+        price: "",
+        currency: "NGN",
+        city: "",
+        address: "",
+        type: "furniture",
+      })
+      setSelectedImages([])
+      setImagePreviews([])
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ""
+      }
+      toast({
+        title: "Product Created",
+        description: "The product has been created successfully",
+      })
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create product",
+        variant: "destructive",
+      })
+    },
+  })
+
+  const deleteProductMutation = useMutation({
+    mutationFn: deleteProduct,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["products"] })
+      toast({
+        title: "Product Deleted",
+        description: "The product has been deleted successfully",
+        variant: "destructive",
+      })
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete product",
+        variant: "destructive",
+      })
+    },
+  })
+
+  const products = productsData?.data || []
+  const meta = productsData?.meta
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -179,6 +174,62 @@ export default function ProductsPage() {
     return currency === "NGN" ? `₦${amount.toLocaleString()}` : `$${amount.toLocaleString()}`
   }
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    handleImageFiles(files)
+  }
+
+  const handleImageFiles = (files: File[]) => {
+    const validFiles = files.filter(file => file.type.startsWith('image/'))
+    
+    if (validFiles.length !== files.length) {
+      toast({
+        title: "Error", 
+        description: "Please select only image files",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (validFiles.some(file => file.size > 2 * 1024 * 1024)) {
+      toast({
+        title: "Error", 
+        description: "Each image must be less than 2MB",
+        variant: "destructive",
+      })
+      return
+    }
+
+    const newFiles = validFiles.slice(0, 5 - selectedImages.length)
+    
+    if (newFiles.length !== validFiles.length) {
+      toast({
+        title: "Error", 
+        description: "Maximum 5 images allowed",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setSelectedImages(prev => [...prev, ...newFiles])
+
+    // Create previews
+    newFiles.forEach(file => {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        if (e.target?.result) {
+          setImagePreviews(prev => [...prev, e.target!.result as string])
+        }
+      }
+      reader.readAsDataURL(file)
+    })
+  }
+
+  const removeImage = (index: number) => {
+    setSelectedImages(prev => prev.filter((_, i) => i !== index))
+    setImagePreviews(prev => prev.filter((_, i) => i !== index))
+  }
+
   const handleCreateProduct = () => {
     // Validate form
     if (!newProduct.title || !newProduct.description || !newProduct.price || !newProduct.city || !newProduct.address) {
@@ -190,62 +241,67 @@ export default function ProductsPage() {
       return
     }
 
-    const createdProduct = {
-      id: `${products.length + 1}`,
-      ...newProduct,
-      price: Number(newProduct.price),
-      lat: 6.5151,
-      lon: 3.3851,
-      user_id: "101",
-      user_name: "Admin User",
-      created_at: new Date().toISOString(),
-      rating: 0,
-      reviews: 0,
-      images: [{ id: "img-new", src: "/placeholder.svg?height=600&width=800" }],
+    if (selectedImages.length === 0) {
+      toast({
+        title: "Error",
+        description: "Please add at least one product image",
+        variant: "destructive",
+      })
+      return
     }
 
-    setProducts([createdProduct, ...products])
-    setIsCreateDialogOpen(false)
-    setNewProduct({
-      title: "",
-      description: "",
-      price: "",
-      currency: "NGN",
-      city: "",
-      address: "",
-      type: "furniture",
+    // Create FormData
+    const formData = new FormData()
+    formData.append("title", newProduct.title)
+    formData.append("description", newProduct.description)
+    formData.append("price", newProduct.price)
+    formData.append("currency", newProduct.currency)
+    formData.append("type", newProduct.type)
+    formData.append("city", newProduct.city)
+    formData.append("address", newProduct.address)
+    formData.append("lat", "0") // Default coordinates
+    formData.append("lon", "0")
+
+    // Add images
+    selectedImages.forEach((image) => {
+      formData.append("images", image)
     })
 
-    toast({
-      title: "Product Created",
-      description: "The product has been created successfully",
-    })
+    createProductMutation.mutate(formData)
   }
 
   const handleDeleteProduct = (productId: string) => {
-    setProducts(products.filter((product) => product.id !== productId))
-    toast({
-      title: "Product Deleted",
-      description: "The product has been deleted successfully",
-      variant: "destructive",
-    })
+    deleteProductMutation.mutate(productId)
   }
 
-  const filteredProducts = products.filter((product) => {
-    const matchesSearch =
-      product.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.city.toLowerCase().includes(searchTerm.toLowerCase())
-
-    const matchesType = typeFilter === "all" || product.type === typeFilter
-    const matchesCity = cityFilter === "all" || product.city === cityFilter
-
-    return matchesSearch && matchesType && matchesCity
-  })
+  // Since we're using the API, we don't need to filter on the frontend
+  // The API already handles filtering via query parameters
+  const displayProducts = products
 
   const cities = Array.from(new Set(products.map((product) => product.city)))
   const productTypes = Array.from(new Set(products.map((product) => product.type)))
+
+  if (isLoading) {
+    return (
+      <div className="flex h-[400px] items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-2 text-muted-foreground">Loading products...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (isError) {
+    return (
+      <div className="flex h-[400px] items-center justify-center">
+        <div className="text-center">
+          <p className="text-lg font-medium">Error loading products</p>
+          <p className="text-muted-foreground">{error?.message || "Something went wrong"}</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -267,7 +323,7 @@ export default function ProductsPage() {
             <ShoppingBag className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent className="p-6">
-            <div className="text-2xl font-bold">{products.length}</div>
+            <div className="text-2xl font-bold">{meta?.total || 0}</div>
             <p className="text-xs text-muted-foreground">All listed products</p>
           </CardContent>
         </Card>
@@ -283,14 +339,12 @@ export default function ProductsPage() {
         </Card>
         <Card className="border-none shadow-md">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 bg-muted/30">
-            <CardTitle className="text-sm font-medium">Average Rating</CardTitle>
+            <CardTitle className="text-sm font-medium">Current Page</CardTitle>
             <Star className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent className="p-6">
-            <div className="text-2xl font-bold">
-              {(products.reduce((acc, product) => acc + product.rating, 0) / products.length).toFixed(1)}
-            </div>
-            <p className="text-xs text-muted-foreground">Across all products</p>
+            <div className="text-2xl font-bold">{products.length}</div>
+            <p className="text-xs text-muted-foreground">Products on this page</p>
           </CardContent>
         </Card>
         <Card className="border-none shadow-md">
@@ -320,12 +374,12 @@ export default function ProductsPage() {
                   placeholder="Search products..."
                   className="pl-8"
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) => handleSearchChange(e.target.value)}
                 />
               </div>
               <div className="flex flex-wrap gap-2">
                 <div className="w-[180px]">
-                  <Select value={typeFilter} onValueChange={setTypeFilter}>
+                  <Select value={typeFilter} onValueChange={handleTypeFilterChange}>
                     <SelectTrigger>
                       <SelectValue placeholder="Product type" />
                     </SelectTrigger>
@@ -340,7 +394,7 @@ export default function ProductsPage() {
                   </Select>
                 </div>
                 <div className="w-[180px]">
-                  <Select value={cityFilter} onValueChange={setCityFilter}>
+                  <Select value={cityFilter} onValueChange={handleCityFilterChange}>
                     <SelectTrigger>
                       <SelectValue placeholder="City" />
                     </SelectTrigger>
@@ -375,14 +429,14 @@ export default function ProductsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredProducts.length === 0 ? (
+                  {displayProducts.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={8} className="h-24 text-center">
                         No products found.
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredProducts.map((product) => (
+                    displayProducts.map((product) => (
                       <TableRow key={product.id}>
                         <TableCell className="font-medium">
                           <div className="flex items-center gap-3">
@@ -421,12 +475,12 @@ export default function ProductsPage() {
                         <TableCell>
                           <div className="flex items-center gap-1">
                             <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
-                            <span>{product.rating.toFixed(1)}</span>
-                            <span className="text-xs text-muted-foreground">({product.reviews})</span>
+                            <span>{product.reviews?.length || 0}</span>
+                            <span className="text-xs text-muted-foreground">reviews</span>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className="text-sm">{product.user_name}</div>
+                          <div className="text-sm">{product.user?.name || "Unknown"}</div>
                         </TableCell>
                         <TableCell>
                           <div className="text-sm">{formatDate(product.created_at)}</div>
@@ -462,6 +516,7 @@ export default function ProductsPage() {
                               <DropdownMenuItem
                                 className="text-red-600"
                                 onClick={() => handleDeleteProduct(product.id)}
+                                disabled={deleteProductMutation.isPending}
                               >
                                 <Trash2 className="mr-2 h-4 w-4" />
                                 Delete product
@@ -475,6 +530,62 @@ export default function ProductsPage() {
                 </TableBody>
               </Table>
             </div>
+
+            {/* Pagination Controls */}
+            {meta && meta.totalPages > 1 && (
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-muted-foreground">
+                  Showing {((meta.page - 1) * meta.limit) + 1} to {Math.min(meta.page * meta.limit, meta.total)} of {meta.total} products
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1 || isLoading}
+                  >
+                    Previous
+                  </Button>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, meta.totalPages) }, (_, i) => {
+                      const page = i + 1
+                      return (
+                        <Button
+                          key={page}
+                          variant={currentPage === page ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setCurrentPage(page)}
+                          disabled={isLoading}
+                        >
+                          {page}
+                        </Button>
+                      )
+                    })}
+                    {meta.totalPages > 5 && (
+                      <>
+                        <span className="text-muted-foreground">...</span>
+                        <Button
+                          variant={currentPage === meta.totalPages ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setCurrentPage(meta.totalPages)}
+                          disabled={isLoading}
+                        >
+                          {meta.totalPages}
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(Math.min(meta.totalPages, currentPage + 1))}
+                    disabled={currentPage === meta.totalPages || isLoading}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -583,23 +694,58 @@ export default function ProductsPage() {
                 <div className="grid gap-2">
                   <Label>Product Images</Label>
                   <div className="flex flex-wrap gap-4">
-                    <div className="relative h-32 w-32 overflow-hidden rounded border bg-muted flex items-center justify-center">
-                      <ImageIcon className="h-8 w-8 text-muted-foreground" />
-                    </div>
-                    <Button variant="outline" className="h-32 w-32">
-                      <Plus className="h-6 w-6 text-muted-foreground" />
-                    </Button>
+                    {imagePreviews.map((preview, index) => (
+                      <div key={index} className="relative h-32 w-32 overflow-hidden rounded border bg-muted">
+                        <img
+                          src={preview}
+                          alt={`Preview ${index + 1}`}
+                          className="h-full w-full object-cover"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          className="absolute top-1 right-1 h-6 w-6 p-0"
+                          onClick={() => removeImage(index)}
+                        >
+                          ×
+                        </Button>
+                      </div>
+                    ))}
+                    {selectedImages.length < 5 && (
+                      <div
+                        className="h-32 w-32 border-2 border-dashed border-muted-foreground/25 rounded flex items-center justify-center cursor-pointer hover:border-muted-foreground/50 transition-colors"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        <div className="text-center">
+                          <ImageIcon className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                          <p className="text-xs text-muted-foreground">Add Image</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  <p className="text-xs text-muted-foreground">Upload product images (max 5 images, 2MB each)</p>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={handleImageSelect}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Upload product images (max 5 images, 2MB each). Supported formats: JPG, PNG, GIF
+                  </p>
                 </div>
               </TabsContent>
             </Tabs>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)} disabled={createProductMutation.isPending}>
               Cancel
             </Button>
-            <Button onClick={handleCreateProduct}>Create Product</Button>
+            <Button onClick={handleCreateProduct} disabled={createProductMutation.isPending}>
+              {createProductMutation.isPending ? "Creating..." : "Create Product"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -654,7 +800,7 @@ export default function ProductsPage() {
                         <div className="flex items-center gap-2">
                           <Star className="h-4 w-4 text-amber-500" />
                           <span>
-                            {selectedProduct.rating.toFixed(1)} ({selectedProduct.reviews} reviews)
+                            {selectedProduct.reviews?.length || 0} reviews
                           </span>
                         </div>
                       </div>
@@ -663,7 +809,7 @@ export default function ProductsPage() {
                     <div>
                       <h3 className="text-lg font-medium">Listed By</h3>
                       <div className="mt-2 text-sm">
-                        <p>{selectedProduct.user_name}</p>
+                        <p>{selectedProduct.user?.name || "Unknown User"}</p>
                         <p className="text-muted-foreground">Listed on {formatDate(selectedProduct.created_at)}</p>
                       </div>
                     </div>

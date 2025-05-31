@@ -20,6 +20,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Search, Filter, CheckCircle, XCircle, Eye, Clock } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
+import { VerificationProvider, useVerification } from "@/lib/contexts/users-context"
 
 // Mock data for verification requests
 const mockVerificationRequests = [
@@ -98,15 +99,25 @@ const mockVerificationRequests = [
   },
 ]
 
-export default function VerificationPage() {
-  const [verificationRequests, setVerificationRequests] = useState(mockVerificationRequests)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [statusFilter, setStatusFilter] = useState("all")
-  const [userTypeFilter, setUserTypeFilter] = useState("all")
-  const [selectedRequest, setSelectedRequest] = useState<any>(null)
-  const [rejectionReason, setRejectionReason] = useState("")
-  const [openRejectDialog, setOpenRejectDialog] = useState(false)
-  const { toast } = useToast()
+function VerificationPageContent() {
+  const {
+    verificationData,
+    isVerificationLoading,
+    isVerificationError,
+    verificationError,
+    verificationPage,
+    verificationLimit,
+    verificationStatusFilter,
+    verificationUserTypeFilter,
+    verificationSearch,
+    setVerificationPage,
+    setVerificationLimit,
+    setVerificationStatusFilter,
+    setVerificationUserTypeFilter,
+    setVerificationSearch,
+    refetchVerification,
+    handleUpdateUserVerification,
+  } = useVerification()
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -116,25 +127,21 @@ export default function VerificationPage() {
     })
   }
 
-  const handleApproveVerification = (requestId: string) => {
-    setVerificationRequests(
-      verificationRequests.map((request) =>
-        request.id === requestId
-          ? {
-              ...request,
-              status: "approved",
-              approved_at: new Date().toISOString(),
-            }
-          : request,
-      ),
-    )
+  const [selectedRequest, setSelectedRequest] = useState<any>(null)
+  const [rejectionReason, setRejectionReason] = useState("")
+  const [openRejectDialog, setOpenRejectDialog] = useState(false)
+  const { toast } = useToast()
+
+  const handleApproveVerification = async (userId: string) => {
+    await handleUpdateUserVerification(userId, { status: "verified" })
+    refetchVerification()
     toast({
       title: "Verification Approved",
       description: "User has been successfully verified",
     })
   }
 
-  const handleRejectVerification = (requestId: string) => {
+  const handleRejectVerification = async (userId: string) => {
     if (!rejectionReason.trim()) {
       toast({
         title: "Error",
@@ -143,23 +150,10 @@ export default function VerificationPage() {
       })
       return
     }
-
-    setVerificationRequests(
-      verificationRequests.map((request) =>
-        request.id === requestId
-          ? {
-              ...request,
-              status: "rejected",
-              rejected_at: new Date().toISOString(),
-              rejection_reason: rejectionReason,
-            }
-          : request,
-      ),
-    )
-
+    await handleUpdateUserVerification(userId, { status: "rejected", adminNotes: rejectionReason })
+    refetchVerification()
     setOpenRejectDialog(false)
     setRejectionReason("")
-
     toast({
       title: "Verification Rejected",
       description: "Verification request has been rejected",
@@ -167,21 +161,21 @@ export default function VerificationPage() {
     })
   }
 
-  const filteredRequests = verificationRequests.filter((request) => {
+  const filteredRequests = (verificationData?.data || []).filter((request) => {
     const matchesSearch =
-      request.user_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.user_email.toLowerCase().includes(searchTerm.toLowerCase())
+      (request.first_name + " " + request.last_name).toLowerCase().includes(verificationSearch.toLowerCase()) ||
+      request.email.toLowerCase().includes(verificationSearch.toLowerCase())
 
-    const matchesStatus = statusFilter === "all" || request.status === statusFilter
+    const matchesStatus = verificationStatusFilter === "" || request.verification_status === verificationStatusFilter
 
-    const matchesUserType = userTypeFilter === "all" || request.user_type === userTypeFilter
+    const matchesUserType = verificationUserTypeFilter === "" || request.user_type === verificationUserTypeFilter
 
     return matchesSearch && matchesStatus && matchesUserType
   })
 
-  const pendingRequests = filteredRequests.filter((request) => request.status === "pending")
-  const approvedRequests = filteredRequests.filter((request) => request.status === "approved")
-  const rejectedRequests = filteredRequests.filter((request) => request.status === "rejected")
+  const pendingRequests = filteredRequests.filter((request) => request.verification_status === "pending")
+  const approvedRequests = filteredRequests.filter((request) => request.verification_status === "verified")
+  const rejectedRequests = filteredRequests.filter((request) => request.verification_status === "rejected")
 
   return (
     <div className="space-y-6">
@@ -189,7 +183,6 @@ export default function VerificationPage() {
         <h1 className="text-3xl font-bold tracking-tight">User Verification</h1>
         <p className="text-muted-foreground">Manage and process user verification requests</p>
       </div>
-
       <Card>
         <CardHeader>
           <CardTitle>Verification Requests</CardTitle>
@@ -204,13 +197,13 @@ export default function VerificationPage() {
                   type="search"
                   placeholder="Search by name or email..."
                   className="pl-8"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  value={verificationSearch}
+                  onChange={(e) => setVerificationSearch(e.target.value)}
                 />
               </div>
               <div className="flex gap-2">
                 <div className="w-[180px]">
-                  <Select value={userTypeFilter} onValueChange={setUserTypeFilter}>
+                  <Select value={verificationUserTypeFilter} onValueChange={setVerificationUserTypeFilter}>
                     <SelectTrigger>
                       <SelectValue placeholder="Filter by type" />
                     </SelectTrigger>
@@ -219,10 +212,24 @@ export default function VerificationPage() {
                       <SelectItem value="agent">Agent</SelectItem>
                       <SelectItem value="vendor">Vendor</SelectItem>
                       <SelectItem value="artisan">Artisan</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                <Button variant="outline" size="icon">
+                <div className="w-[180px]">
+                  <Select value={verificationStatusFilter} onValueChange={setVerificationStatusFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="verified">Verified</SelectItem>
+                      <SelectItem value="rejected">Rejected</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button variant="outline" size="icon" onClick={refetchVerification}>
                   <Filter className="h-4 w-4" />
                 </Button>
               </div>
@@ -237,9 +244,9 @@ export default function VerificationPage() {
                     {pendingRequests.length}
                   </Badge>
                 </TabsTrigger>
-                <TabsTrigger value="approved" className="flex gap-2">
+                <TabsTrigger value="verified" className="flex gap-2">
                   <CheckCircle className="h-4 w-4" />
-                  Approved
+                  Verified
                   <Badge variant="secondary" className="ml-1">
                     {approvedRequests.length}
                   </Badge>
@@ -253,7 +260,7 @@ export default function VerificationPage() {
                 </TabsTrigger>
               </TabsList>
 
-              {["pending", "approved", "rejected"].map((status) => (
+              {["pending", "verified", "rejected"].map((status) => (
                 <TabsContent key={status} value={status} className="space-y-4">
                   <div className="rounded-md border">
                     <Table>
@@ -262,7 +269,7 @@ export default function VerificationPage() {
                           <TableHead>User</TableHead>
                           <TableHead>Type</TableHead>
                           <TableHead>Submitted</TableHead>
-                          {status === "approved" && <TableHead>Approved</TableHead>}
+                          {status === "verified" && <TableHead>Verified</TableHead>}
                           {status === "rejected" && (
                             <>
                               <TableHead>Rejected</TableHead>
@@ -273,7 +280,7 @@ export default function VerificationPage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {filteredRequests.filter((req) => req.status === status).length === 0 ? (
+                        {filteredRequests.filter((req) => req.verification_status === status).length === 0 ? (
                           <TableRow>
                             <TableCell
                               colSpan={status === "pending" ? 4 : status === "approved" ? 5 : 6}
@@ -284,55 +291,36 @@ export default function VerificationPage() {
                           </TableRow>
                         ) : (
                           filteredRequests
-                            .filter((request) => request.status === status)
+                            .filter((request) => request.verification_status === status)
                             .map((request) => (
                               <TableRow key={request.id}>
                                 <TableCell className="font-medium">
                                   <div className="flex items-center gap-3">
                                     <Avatar>
-                                      <AvatarImage
-                                        src={`/placeholder.svg?height=40&width=40`}
-                                        alt={request.user_name}
-                                      />
-                                      <AvatarFallback>
-                                        {request.user_name
-                                          .split(" ")
-                                          .map((n) => n[0])
-                                          .join("")}
-                                      </AvatarFallback>
+                                      <AvatarImage src={`/placeholder.svg?height=40&width=40`} alt={request.first_name + ' ' + request.last_name} />
+                                      <AvatarFallback>{request.first_name.charAt(0)}{request.last_name.charAt(0)}</AvatarFallback>
                                     </Avatar>
                                     <div>
-                                      <div className="font-medium">{request.user_name}</div>
-                                      <div className="text-sm text-muted-foreground">{request.user_email}</div>
+                                      <div className="font-medium">{request.first_name} {request.last_name}</div>
+                                      <div className="text-sm text-muted-foreground">{request.email}</div>
                                     </div>
                                   </div>
                                 </TableCell>
                                 <TableCell>
-                                  <Badge
-                                    variant="outline"
-                                    className={
-                                      request.user_type === "agent"
-                                        ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
-                                        : request.user_type === "vendor"
-                                          ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400"
-                                          : "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400"
-                                    }
-                                  >
-                                    {request.user_type.charAt(0).toUpperCase() + request.user_type.slice(1)}
-                                  </Badge>
+                                  <Badge variant="outline">{request.user_type.charAt(0).toUpperCase() + request.user_type.slice(1)}</Badge>
                                 </TableCell>
-                                <TableCell>{formatDate(request.submitted_at)}</TableCell>
+                                {/* <TableCell>{formatDate(request.submitted_at)}</TableCell>
                                 {status === "approved" && (
                                   <TableCell>{formatDate(request.approved_at || "")}</TableCell>
-                                )}
-                                {status === "rejected" && (
+                                )} */}
+                                {/* {status === "rejected" && (
                                   <>
                                     <TableCell>{formatDate(request.rejected_at || "")}</TableCell>
                                     <TableCell>
                                       <span className="line-clamp-1">{request.rejection_reason}</span>
                                     </TableCell>
                                   </>
-                                )}
+                                )} */}
                                 <TableCell className="text-right">
                                   <div className="flex justify-end gap-2">
                                     <Dialog>
@@ -346,107 +334,65 @@ export default function VerificationPage() {
                                         <DialogHeader>
                                           <DialogTitle>Verification Documents</DialogTitle>
                                           <DialogDescription>
-                                            Review the submitted documents for {selectedRequest?.user_name}
+                                            Review the submitted documents for {selectedRequest?.first_name} {selectedRequest?.last_name}
                                           </DialogDescription>
                                         </DialogHeader>
                                         {selectedRequest && (
                                           <div className="grid gap-6">
                                             <div className="flex items-center gap-4">
                                               <Avatar className="h-16 w-16">
-                                                <AvatarImage
-                                                  src={`/placeholder.svg?height=64&width=64`}
-                                                  alt={selectedRequest.user_name}
-                                                />
-                                                <AvatarFallback className="text-lg">
-                                                  {selectedRequest.user_name
-                                                    .split(" ")
-                                                    .map((n) => n[0])
-                                                    .join("")}
-                                                </AvatarFallback>
+                                                <AvatarImage src={`/placeholder.svg?height=64&width=64`} alt={selectedRequest.first_name + ' ' + selectedRequest.last_name} />
+                                                <AvatarFallback className="text-lg">{selectedRequest.first_name.charAt(0)}{selectedRequest.last_name.charAt(0)}</AvatarFallback>
                                               </Avatar>
                                               <div>
-                                                <h3 className="text-lg font-medium">{selectedRequest.user_name}</h3>
-                                                <p className="text-muted-foreground">{selectedRequest.user_email}</p>
+                                                <h3 className="text-lg font-medium">{selectedRequest.first_name} {selectedRequest.last_name}</h3>
+                                                <p className="text-muted-foreground">{selectedRequest.email}</p>
                                                 <div className="mt-1 flex items-center gap-2">
-                                                  <Badge
-                                                    variant="outline"
-                                                    className={
-                                                      selectedRequest.user_type === "agent"
-                                                        ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
-                                                        : selectedRequest.user_type === "vendor"
-                                                          ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400"
-                                                          : "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400"
-                                                    }
-                                                  >
-                                                    {selectedRequest.user_type.charAt(0).toUpperCase() +
-                                                      selectedRequest.user_type.slice(1)}
-                                                  </Badge>
-                                                  <Badge
-                                                    variant="outline"
-                                                    className={
-                                                      selectedRequest.status === "approved"
-                                                        ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                                                        : selectedRequest.status === "rejected"
-                                                          ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
-                                                          : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
-                                                    }
-                                                  >
-                                                    {selectedRequest.status.charAt(0).toUpperCase() +
-                                                      selectedRequest.status.slice(1)}
-                                                  </Badge>
+                                                  <Badge variant="outline">{selectedRequest.user_type.charAt(0).toUpperCase() + selectedRequest.user_type.slice(1)}</Badge>
+                                                  <Badge variant="outline">{selectedRequest.verification_status.charAt(0).toUpperCase() + selectedRequest.verification_status.slice(1)}</Badge>
                                                 </div>
                                               </div>
                                             </div>
 
                                             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                                              {selectedRequest.documents.map((doc: any) => (
+                                              {selectedRequest.verification.ninDocs.map((doc:any) => (
                                                 <div key={doc.id} className="overflow-hidden rounded-lg border">
                                                   <div className="aspect-video w-full overflow-hidden bg-muted">
-                                                    <img
-                                                      src={doc.url || "/placeholder.svg"}
-                                                      alt={doc.name}
-                                                      className="h-full w-full object-cover"
-                                                    />
+                                                    <img src={doc.src} alt={doc.name} className="h-full w-full object-cover" />
                                                   </div>
                                                   <div className="p-3">
                                                     <h4 className="font-medium">{doc.name}</h4>
-                                                    <p className="text-sm text-muted-foreground">
-                                                      {doc.type === "id_card"
-                                                        ? "Identification Document"
-                                                        : doc.type === "profile_photo"
-                                                          ? "Profile Photo"
-                                                          : "Business Registration"}
-                                                    </p>
+                                                    <p className="text-sm text-muted-foreground">NIN Document</p>
+                                                  </div>
+                                                </div>
+                                              ))}
+                                              {selectedRequest.verification.cacDocs.map((doc:any) => (
+                                                <div key={doc.id} className="overflow-hidden rounded-lg border">
+                                                  <div className="aspect-video w-full overflow-hidden bg-muted">
+                                                    <img src={doc.src} alt={doc.name} className="h-full w-full object-cover" />
+                                                  </div>
+                                                  <div className="p-3">
+                                                    <h4 className="font-medium">{doc.name}</h4>
+                                                    <p className="text-sm text-muted-foreground">CAC Document</p>
                                                   </div>
                                                 </div>
                                               ))}
                                             </div>
 
-                                            {selectedRequest.status === "rejected" && (
+                                            {selectedRequest.verification_status === "rejected" && (
                                               <div className="rounded-md border p-4">
-                                                <h4 className="font-medium">Rejection Reason:</h4>
-                                                <p className="mt-1 text-muted-foreground">
-                                                  {selectedRequest.rejection_reason}
-                                                </p>
+                                                <h4 className="font-medium">Admin Notes:</h4>
+                                                <p className="mt-1 text-muted-foreground">{selectedRequest.verification.note}</p>
                                               </div>
                                             )}
 
-                                            {selectedRequest.status === "pending" && (
+                                            {selectedRequest.verification_status === "pending" && (
                                               <DialogFooter>
-                                                <Button
-                                                  variant="outline"
-                                                  onClick={() => {
-                                                    setOpenRejectDialog(true)
-                                                  }}
-                                                >
+                                                <Button variant="outline" onClick={() => setOpenRejectDialog(true)}>
                                                   <XCircle className="mr-2 h-4 w-4" />
                                                   Reject
                                                 </Button>
-                                                <Button
-                                                  onClick={() => {
-                                                    handleApproveVerification(selectedRequest.id)
-                                                  }}
-                                                >
+                                                <Button onClick={() => handleApproveVerification(selectedRequest.id)}>
                                                   <CheckCircle className="mr-2 h-4 w-4" />
                                                   Approve
                                                 </Button>
@@ -538,5 +484,13 @@ export default function VerificationPage() {
         </DialogContent>
       </Dialog>
     </div>
+  )
+}
+
+export default function VerificationPage() {
+  return (
+    <VerificationProvider>
+      <VerificationPageContent />
+    </VerificationProvider>
   )
 }

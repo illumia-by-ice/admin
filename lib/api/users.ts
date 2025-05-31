@@ -176,3 +176,43 @@ export const updateUser = async (userId: string, userData: UpdateUserData): Prom
     throw new Error("Failed to update user. Please check your connection and try again.");
   }
 };
+
+export interface VerificationDoc {
+  id: string;
+  src: string;
+  name: string;
+}
+
+export interface VerificationUser {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  user_type: string;
+  verification_status: "pending" | "verified" | "rejected";
+  verification: {
+    note?: string;
+    ninDocs: VerificationDoc[];
+    cacDocs: VerificationDoc[];
+  };
+}
+
+export interface VerificationRequestsResponse {
+  data: VerificationUser[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
+export const getVerificationRequests = async (params: { page?: number; limit?: number; user_type?: string; status?: string; search?: string } = {}): Promise<VerificationRequestsResponse> => {
+  const response = await api.get("/admin/users/verification/requests", { params });
+  return response.data;
+};
+
+export const updateUserVerification = async (userId: string, data: { status: "pending" | "verified" | "rejected"; adminNotes?: string }): Promise<VerificationUser> => {
+  const response = await api.put(`/admin/users/${userId}/verification`, data);
+  return response.data;
+};

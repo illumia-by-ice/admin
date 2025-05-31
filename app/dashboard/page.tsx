@@ -39,7 +39,7 @@ export default function DashboardPage() {
       <div className="space-y-6">
         <div className="flex flex-col gap-2">
           <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground">Overview of your property management system</p>
+          <p className="text-muted-foreground">Overview of your system</p>
         </div>
         
         <Alert variant="destructive">
@@ -173,7 +173,7 @@ export default function DashboardPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">Overview of your property management system</p>
+        <p className="text-muted-foreground">Overview of the system</p>
       </div>
 
       <Tabs defaultValue="overview" className="space-y-6">

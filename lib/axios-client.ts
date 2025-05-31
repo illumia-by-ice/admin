@@ -2,6 +2,7 @@ import axios from "axios";
 
 // Create an Axios client instance with a base URL
 const api = axios.create({
+  // baseURL: "https://api.illumiacityempire.com",
   baseURL: "http://localhost:7000",
   headers: {
     "Content-Type": "application/json",
