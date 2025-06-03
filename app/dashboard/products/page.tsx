@@ -592,7 +592,7 @@ export default function ProductsPage() {
 
       {/* Create Product Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent className="sm:max-w-[700px]">
+        <DialogContent className="h-[95vh] overflow-y-scroll sm:max-w-[700px]">
           <DialogHeader>
             <DialogTitle>Add New Product</DialogTitle>
             <DialogDescription>Fill in the details to create a new product listing</DialogDescription>
@@ -752,7 +752,7 @@ export default function ProductsPage() {
 
       {/* View Product Dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="sm:max-w-[800px]">
+        <DialogContent className="h-[95vh] overflow-y-scroll sm:max-w-[800px]">
           {selectedProduct && (
             <>
               <DialogHeader>
