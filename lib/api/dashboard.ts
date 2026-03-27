@@ -136,7 +136,7 @@ export const getAds = async (
     search?: string;
   } = {}
 ): Promise<AdsResponse> => {
-  const response = await api.get("/admin/ads");
+  const response = await api.get("/admin/ads", { params });
   return response.data;
 };
 

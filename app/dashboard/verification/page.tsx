@@ -198,12 +198,12 @@ function VerificationPageContent() {
                   placeholder="Search by name or email..."
                   className="pl-8"
                   value={verificationSearch}
-                  onChange={(e) => setVerificationSearch(e.target.value)}
+                  onChange={(e) => { setVerificationSearch(e.target.value); setVerificationPage(1) }}
                 />
               </div>
               <div className="flex gap-2">
                 <div className="w-[180px]">
-                  <Select value={verificationUserTypeFilter} onValueChange={setVerificationUserTypeFilter}>
+                  <Select value={verificationUserTypeFilter} onValueChange={(v) => { setVerificationUserTypeFilter(v); setVerificationPage(1) }}>
                     <SelectTrigger>
                       <SelectValue placeholder="Filter by type" />
                     </SelectTrigger>
@@ -217,7 +217,7 @@ function VerificationPageContent() {
                   </Select>
                 </div>
                 <div className="w-[180px]">
-                  <Select value={verificationStatusFilter} onValueChange={setVerificationStatusFilter}>
+                  <Select value={verificationStatusFilter} onValueChange={(v) => { setVerificationStatusFilter(v); setVerificationPage(1) }}>
                     <SelectTrigger>
                       <SelectValue placeholder="Status" />
                     </SelectTrigger>
@@ -437,6 +437,62 @@ function VerificationPageContent() {
                 </TabsContent>
               ))}
             </Tabs>
+
+            {/* Pagination Controls */}
+            {verificationData?.meta && verificationData.meta.totalPages > 1 && (
+              <div className="flex items-center justify-between mt-4">
+                <div className="text-sm text-muted-foreground">
+                  Showing {((verificationData.meta.page - 1) * verificationData.meta.limit) + 1} to {Math.min(verificationData.meta.page * verificationData.meta.limit, verificationData.meta.total)} of {verificationData.meta.total} requests
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setVerificationPage(Math.max(1, verificationPage - 1))}
+                    disabled={verificationPage === 1 || isVerificationLoading}
+                  >
+                    Previous
+                  </Button>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, verificationData.meta.totalPages) }, (_, i) => {
+                      const page = i + 1
+                      return (
+                        <Button
+                          key={page}
+                          variant={verificationPage === page ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setVerificationPage(page)}
+                          disabled={isVerificationLoading}
+                        >
+                          {page}
+                        </Button>
+                      )
+                    })}
+                    {verificationData.meta.totalPages > 5 && (
+                      <>
+                        <span className="text-muted-foreground">...</span>
+                        <Button
+                          variant={verificationPage === verificationData.meta.totalPages ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setVerificationPage(verificationData.meta.totalPages)}
+                          disabled={isVerificationLoading}
+                        >
+                          {verificationData.meta.totalPages}
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setVerificationPage(Math.min(verificationData.meta.totalPages, verificationPage + 1))}
+                    disabled={verificationPage === verificationData.meta.totalPages || isVerificationLoading}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

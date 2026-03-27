@@ -53,6 +53,7 @@ export default function AdsPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [placementFilter, setPlacementFilter] = useState("all")
+  const [currentPage, setCurrentPage] = useState(1)
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [imageUploadAdId, setImageUploadAdId] = useState<string | null>(null)
   const [imageFile, setImageFile] = useState<File | null>(null)
@@ -67,10 +68,12 @@ export default function AdsPage() {
     error,
     refetch,
   } = useQuery({
-    queryKey: ["ads", { searchTerm, statusFilter, placementFilter }],
+    queryKey: ["ads", currentPage, searchTerm, statusFilter, placementFilter],
     queryFn: () =>
       getAds({
-        search: searchTerm,
+        page: currentPage,
+        limit: 10,
+        search: searchTerm || undefined,
         status: statusFilter === "all" ? undefined : statusFilter,
         placement: placementFilter === "all" ? undefined : placementFilter,
       }),
@@ -152,12 +155,8 @@ export default function AdsPage() {
 
   // Remove all local state for ads and ad creation
   // Use only adsData for rendering and filtering
-  const filteredAds = adsData?.data?.filter((ad) => {
-    const matchesSearch = ad.title.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = statusFilter === "all" || ad.status === statusFilter
-    const matchesPlacement = placementFilter === "all" || ad.placement === placementFilter
-    return matchesSearch && matchesStatus && matchesPlacement
-  }) || []
+  const ads = adsData?.data || []
+  const meta = adsData?.meta || { total: 0, page: 1, limit: 10, totalPages: 1 }
 
   // Ad creation handler
   const onCreateAd = (formData: any) => {
@@ -192,7 +191,7 @@ export default function AdsPage() {
             <CheckCircle className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{filteredAds.filter(ad => ad.status === 'active').length}</div>
+            <div className="text-2xl font-bold">{ads.filter(ad => ad.status === 'active').length}</div>
             <p className="text-xs text-muted-foreground">Currently running ads</p>
           </CardContent>
         </Card>
@@ -202,7 +201,7 @@ export default function AdsPage() {
             <Clock className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{filteredAds.filter(ad => ad.status === 'scheduled').length}</div>
+            <div className="text-2xl font-bold">{ads.filter(ad => ad.status === 'scheduled').length}</div>
             <p className="text-xs text-muted-foreground">Ads waiting to start</p>
           </CardContent>
         </Card>
@@ -212,7 +211,7 @@ export default function AdsPage() {
             <PauseCircle className="h-4 w-4 text-amber-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{filteredAds.filter(ad => ad.status === 'paused').length}</div>
+            <div className="text-2xl font-bold">{ads.filter(ad => ad.status === 'paused').length}</div>
             <p className="text-xs text-muted-foreground">Temporarily paused ads</p>
           </CardContent>
         </Card>
@@ -222,7 +221,7 @@ export default function AdsPage() {
             <XCircle className="h-4 w-4 text-gray-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{filteredAds.filter(ad => ad.status === 'ended').length}</div>
+            <div className="text-2xl font-bold">{ads.filter(ad => ad.status === 'ended').length}</div>
             <p className="text-xs text-muted-foreground">Completed ad campaigns</p>
           </CardContent>
         </Card>
@@ -248,12 +247,12 @@ export default function AdsPage() {
                     placeholder="Search ads..."
                     className="pl-8"
                     value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1) }}
                   />
                 </div>
                 <div className="flex gap-2">
                   <div className="w-[180px]">
-                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setCurrentPage(1) }}>
                       <SelectTrigger>
                         <SelectValue placeholder="Filter by status" />
                       </SelectTrigger>
@@ -263,7 +262,7 @@ export default function AdsPage() {
                     </Select>
                   </div>
                   <div className="w-[180px]">
-                    <Select value={placementFilter} onValueChange={setPlacementFilter}>
+                    <Select value={placementFilter} onValueChange={(v) => { setPlacementFilter(v); setCurrentPage(1) }}>
                       <SelectTrigger>
                         <SelectValue placeholder="Filter by placement" />
                       </SelectTrigger>
@@ -287,12 +286,12 @@ export default function AdsPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredAds.length === 0 ? (
+                    {ads.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={5} className="h-24 text-center">No ads found.</TableCell>
                       </TableRow>
                     ) : (
-                      filteredAds.map((ad) => (
+                      ads.map((ad) => (
                         <TableRow key={ad.id}>
                           <TableCell>{ad.title}</TableCell>
                           <TableCell>
@@ -320,6 +319,62 @@ export default function AdsPage() {
                   </TableBody>
                 </Table>
               </div>
+
+              {/* Pagination Controls */}
+              {meta && meta.totalPages > 1 && (
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-muted-foreground">
+                    Showing {((meta.page - 1) * meta.limit) + 1} to {Math.min(meta.page * meta.limit, meta.total)} of {meta.total} ads
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                      disabled={currentPage === 1 || isLoading}
+                    >
+                      Previous
+                    </Button>
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: Math.min(5, meta.totalPages) }, (_, i) => {
+                        const page = i + 1
+                        return (
+                          <Button
+                            key={page}
+                            variant={currentPage === page ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setCurrentPage(page)}
+                            disabled={isLoading}
+                          >
+                            {page}
+                          </Button>
+                        )
+                      })}
+                      {meta.totalPages > 5 && (
+                        <>
+                          <span className="text-muted-foreground">...</span>
+                          <Button
+                            variant={currentPage === meta.totalPages ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setCurrentPage(meta.totalPages)}
+                            disabled={isLoading}
+                          >
+                            {meta.totalPages}
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(Math.min(meta.totalPages, currentPage + 1))}
+                      disabled={currentPage === meta.totalPages || isLoading}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </CardContent>

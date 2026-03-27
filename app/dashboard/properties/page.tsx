@@ -856,6 +856,62 @@ export default function PropertiesPage() {
                 </TableBody>
               </Table>
             </div>
+
+            {/* Pagination Controls */}
+            {meta && meta.totalPages > 1 && (
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-muted-foreground">
+                  Showing {((meta.page - 1) * meta.limit) + 1} to {Math.min(meta.page * meta.limit, meta.total)} of {meta.total} properties
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1 || isLoading}
+                  >
+                    Previous
+                  </Button>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, meta.totalPages) }, (_, i) => {
+                      const page = i + 1;
+                      return (
+                        <Button
+                          key={page}
+                          variant={currentPage === page ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setCurrentPage(page)}
+                          disabled={isLoading}
+                        >
+                          {page}
+                        </Button>
+                      );
+                    })}
+                    {meta.totalPages > 5 && (
+                      <>
+                        <span className="text-muted-foreground">...</span>
+                        <Button
+                          variant={currentPage === meta.totalPages ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setCurrentPage(meta.totalPages)}
+                          disabled={isLoading}
+                        >
+                          {meta.totalPages}
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(Math.min(meta.totalPages, currentPage + 1))}
+                    disabled={currentPage === meta.totalPages || isLoading}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
