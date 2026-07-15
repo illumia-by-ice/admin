@@ -2,8 +2,8 @@ import axios from "axios";
 
 // Create an Axios client instance with a base URL
 const api = axios.create({
-  baseURL: "https://api.illumiacityempire.com",
-  // baseURL: "http://localhost:7000",
+  baseURL:
+    process.env.NEXT_PUBLIC_API_URL || "https://api.illumiacityempire.com",
   headers: {
     "Content-Type": "application/json",
   },

@@ -39,8 +39,11 @@ import {
   Tag,
   Package,
   Star,
+  Sparkles,
+  Bell,
 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
 import { useToast } from "@/hooks/use-toast"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
@@ -49,6 +52,7 @@ import {
   createProduct, 
   updateProduct, 
   deleteProduct,
+  setProductFeatured,
   type Product,
   type ProductsResponse
 } from "@/lib/api/dashboard"
@@ -74,7 +78,10 @@ export default function ProductsPage() {
     currency: "NGN",
     city: "",
     address: "",
-    type: "furniture",
+    type: "New",
+    brand: "",
+    notifyUsers: true,
+    featured: false,
   })
 
   // Reset to first page when filters change
@@ -119,7 +126,10 @@ export default function ProductsPage() {
         currency: "NGN",
         city: "",
         address: "",
-        type: "furniture",
+        type: "New",
+        brand: "",
+        notifyUsers: true,
+        featured: false,
       })
       setSelectedImages([])
       setImagePreviews([])
@@ -154,6 +164,27 @@ export default function ProductsPage() {
       toast({
         title: "Error",
         description: error.message || "Failed to delete product",
+        variant: "destructive",
+      })
+    },
+  })
+
+  const featuredMutation = useMutation({
+    mutationFn: ({ id, featured }: { id: string; featured: boolean }) =>
+      setProductFeatured(id, featured),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["products"] })
+      toast({
+        title: variables.featured ? "Product Featured" : "Product Unfeatured",
+        description: variables.featured
+          ? "The product will now appear in the mobile featured carousel."
+          : "The product was removed from the featured carousel.",
+      })
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Unable to update featured product",
+        description: error.message,
         variant: "destructive",
       })
     },
@@ -232,7 +263,7 @@ export default function ProductsPage() {
 
   const handleCreateProduct = () => {
     // Validate form
-    if (!newProduct.title || !newProduct.description || !newProduct.price || !newProduct.city || !newProduct.address) {
+    if (!newProduct.title || !newProduct.description || !newProduct.price || !newProduct.city || !newProduct.address || !newProduct.brand) {
       toast({
         title: "Error",
         description: "Please fill in all required fields",
@@ -257,6 +288,9 @@ export default function ProductsPage() {
     formData.append("price", newProduct.price)
     formData.append("currency", newProduct.currency)
     formData.append("type", newProduct.type)
+    formData.append("brand", newProduct.brand.trim())
+    formData.append("notify_users", String(newProduct.notifyUsers))
+    formData.append("featured", String(newProduct.featured))
     formData.append("city", newProduct.city)
     formData.append("address", newProduct.address)
     formData.append("lat", "0") // Default coordinates
@@ -448,7 +482,14 @@ export default function ProductsPage() {
                               />
                             </div>
                             <div>
-                              <div className="font-medium line-clamp-1">{product.title}</div>
+                              <div className="flex items-center gap-2">
+                                <div className="font-medium line-clamp-1">{product.title}</div>
+                                {product.featured && (
+                                  <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100">
+                                    <Sparkles className="mr-1 h-3 w-3" /> Featured
+                                  </Badge>
+                                )}
+                              </div>
                               <div className="text-xs text-muted-foreground line-clamp-1">
                                 {product.images.length} {product.images.length === 1 ? "image" : "images"}
                               </div>
@@ -495,6 +536,18 @@ export default function ProductsPage() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  featuredMutation.mutate({
+                                    id: product.id,
+                                    featured: !product.featured,
+                                  })
+                                }
+                                disabled={featuredMutation.isPending}
+                              >
+                                <Sparkles className="mr-2 h-4 w-4" />
+                                {product.featured ? "Remove from featured" : "Add to featured"}
+                              </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => {
                                   setSelectedProduct(product)
@@ -623,6 +676,15 @@ export default function ProductsPage() {
                     rows={4}
                   />
                 </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="brand">Brand</Label>
+                  <Input
+                    id="brand"
+                    placeholder="e.g. Samsung, LG, Apple"
+                    value={newProduct.brand}
+                    onChange={(e) => setNewProduct({ ...newProduct, brand: e.target.value })}
+                  />
+                </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
                     <Label htmlFor="price">Price</Label>
@@ -663,11 +725,8 @@ export default function ProductsPage() {
                       <SelectValue placeholder="Select product type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="furniture">Furniture</SelectItem>
-                      <SelectItem value="electronics">Electronics</SelectItem>
-                      <SelectItem value="service">Service</SelectItem>
-                      <SelectItem value="appliance">Appliance</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
+                      <SelectItem value="New">New</SelectItem>
+                      <SelectItem value="Used">Used</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -688,6 +747,42 @@ export default function ProductsPage() {
                     value={newProduct.city}
                     onChange={(e) => setNewProduct({ ...newProduct, city: e.target.value })}
                   />
+                </div>
+                <div className="grid gap-3 rounded-lg border p-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <Label htmlFor="notify-users" className="flex items-center gap-2">
+                        <Bell className="h-4 w-4" /> Notify users
+                      </Label>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Send push, in-app, and email announcements when this product is created.
+                      </p>
+                    </div>
+                    <Switch
+                      id="notify-users"
+                      checked={newProduct.notifyUsers}
+                      onCheckedChange={(checked) =>
+                        setNewProduct({ ...newProduct, notifyUsers: checked })
+                      }
+                    />
+                  </div>
+                  <div className="flex items-center justify-between gap-4 border-t pt-3">
+                    <div>
+                      <Label htmlFor="featured-product" className="flex items-center gap-2">
+                        <Sparkles className="h-4 w-4" /> Feature product
+                      </Label>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Add it immediately to the mobile featured carousel.
+                      </p>
+                    </div>
+                    <Switch
+                      id="featured-product"
+                      checked={newProduct.featured}
+                      onCheckedChange={(checked) =>
+                        setNewProduct({ ...newProduct, featured: checked })
+                      }
+                    />
+                  </div>
                 </div>
               </TabsContent>
               <TabsContent value="media" className="space-y-4 pt-4">

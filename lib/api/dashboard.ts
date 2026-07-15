@@ -366,6 +366,10 @@ export interface Product {
   city: string;
   address: string;
   type: string;
+  brand?: string | null;
+  notify_users: boolean;
+  featured: boolean;
+  featured_at?: string | null;
   user_id: string;
   images: ProductImage[];
   user?: ProductUser;
@@ -423,6 +427,13 @@ export const updateProduct = async (
 
 export const deleteProduct = async (id: string): Promise<void> => {
   await api.delete(`/marketplace/product/${id}`);
+};
+
+export const setProductFeatured = async (id: string, featured: boolean) => {
+  const response = await api.patch(`/admin/products/${id}/featured`, {
+    featured,
+  });
+  return response.data;
 };
 
 export const getMyProducts = async (
