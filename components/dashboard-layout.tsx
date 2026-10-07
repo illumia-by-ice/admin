@@ -24,6 +24,7 @@ import {
   Moon,
   Sun,
   Search,
+  Gift,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -120,6 +121,11 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       href: "/dashboard/ads",
       icon: <AdCircle className="h-4 w-4" />,
       title: "Ads",
+    },
+    {
+      href: "/dashboard/referrals",
+      icon: <Gift className="h-4 w-4" />,
+      title: "Refer and Earn",
     },
     // { href: "/dashboard/settings", icon: <Settings className="h-4 w-4" />, title: "Settings" },
   ];
