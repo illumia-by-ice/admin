@@ -25,6 +25,7 @@ import {
   Sun,
   Search,
   Gift,
+  Newspaper,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -123,6 +124,11 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       title: "Ads",
     },
     {
+      href: "/dashboard/blog",
+      icon: <Newspaper className="h-4 w-4" />,
+      title: "Blog",
+    },
+    {
       href: "/dashboard/referrals",
       icon: <Gift className="h-4 w-4" />,
       title: "Refer and Earn",
@@ -167,7 +173,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                     href={item.href}
                     icon={item.icon}
                     title={item.title}
-                    isActive={pathname === item.href}
+                    isActive={pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(`${item.href}/`))}
                   />
                 ))}
               </nav>
@@ -239,7 +245,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 href={item.href}
                 icon={item.icon}
                 title={item.title}
-                isActive={pathname === item.href}
+                isActive={pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(`${item.href}/`))}
               />
             ))}
           </nav>
