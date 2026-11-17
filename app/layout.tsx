@@ -3,13 +3,13 @@ import { Inter } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import QueryProvider from "@/lib/query-provider"
+import { Toaster } from "@/components/ui/toaster"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata = {
   title: "Admin Dashboard",
-  description: "Admin dashboard for property management system",
-    generator: 'v0.dev'
+  description: "Illumia City Empire admin",
 }
 
 export default function RootLayout({
@@ -23,6 +23,7 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           <QueryProvider>
             {children}
+            <Toaster />
           </QueryProvider>
         </ThemeProvider>
       </body>

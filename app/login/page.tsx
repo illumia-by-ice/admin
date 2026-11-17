@@ -2,7 +2,8 @@
 
 import type React from "react";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +26,9 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const [expired, setExpired] = useState(false);
+  useEffect(() => setExpired(new URLSearchParams(window.location.search).has("expired")), []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,6 +37,8 @@ export default function LoginPage() {
 
     try {
       await loginAdmin({ email, password });
+      // Nothing cached from a previous admin's session.
+      queryClient.clear();
       router.push("/dashboard");
     } catch (err: any) {
       setError(err.message || "An error occurred during login");
@@ -52,6 +58,12 @@ export default function LoginPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
+            {expired && !error && (
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>Your session ended. Please sign in again.</AlertDescription>
+              </Alert>
+            )}
             {error && (
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />

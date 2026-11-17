@@ -26,7 +26,17 @@ import {
   Search,
   Gift,
   Newspaper,
+  CalendarClock,
+  KeyRound,
+  Package,
+  Wallet,
+  ArrowUpRight,
+  BadgePercent,
+  SlidersHorizontal,
+  Timer,
 } from "lucide-react";
+import { useAdmin, type Permission } from "@/lib/use-admin";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -66,6 +76,26 @@ function NavItem({ href, icon, title, isActive }: NavItemProps) {
   );
 }
 
+const isActive = (pathname: string, href: string) => pathname === href || (href !== "/dashboard" && pathname.startsWith(`${href}/`));
+
+function NavList({ items, money, pathname }: { items: { href: string; icon: ReactNode; title: string }[]; money: { href: string; icon: ReactNode; title: string }[]; pathname: string }) {
+  return (
+    <>
+      {items.map((item) => (
+        <NavItem key={item.href} href={item.href} icon={item.icon} title={item.title} isActive={isActive(pathname, item.href)} />
+      ))}
+      {money.length > 0 && (
+        <>
+          <div className="px-3 pb-1 pt-4 text-xs font-medium uppercase tracking-wide text-muted-foreground">Money</div>
+          {money.map((item) => (
+            <NavItem key={item.href} href={item.href} icon={item.icon} title={item.title} isActive={isActive(pathname, item.href)} />
+          ))}
+        </>
+      )}
+    </>
+  );
+}
+
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
@@ -83,6 +113,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const handleLogout = () => {
     // Use the logout function from our auth API
     logoutAdmin();
+    queryClient.clear();
 
     toast({
       title: "Logged out",
@@ -91,6 +122,21 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
     router.push("/login");
   };
+
+  const { can, admin } = useAdmin();
+  const queryClient = useQueryClient();
+
+  const moneyItems: { href: string; icon: ReactNode; title: string; perm: Permission }[] = [
+    { href: "/dashboard/plans", icon: <CalendarClock className="h-4 w-4" />, title: "Installment plans", perm: "finance:read" },
+    { href: "/dashboard/rent", icon: <KeyRound className="h-4 w-4" />, title: "Rent top-ups", perm: "finance:read" },
+    { href: "/dashboard/orders", icon: <Package className="h-4 w-4" />, title: "Orders", perm: "orders:write" },
+    { href: "/dashboard/wallets", icon: <Wallet className="h-4 w-4" />, title: "Wallets", perm: "wallet:read" },
+    { href: "/dashboard/withdrawals", icon: <ArrowUpRight className="h-4 w-4" />, title: "Withdrawals", perm: "wallet:read" },
+    { href: "/dashboard/subscriptions", icon: <BadgePercent className="h-4 w-4" />, title: "Subscription plans", perm: "finance:read" },
+    { href: "/dashboard/finance-settings", icon: <SlidersHorizontal className="h-4 w-4" />, title: "Finance settings", perm: "finance:read" },
+    { href: "/dashboard/jobs", icon: <Timer className="h-4 w-4" />, title: "Scheduled jobs", perm: "finance:read" },
+  ];
+  const visibleMoney = moneyItems.filter((i) => can(i.perm));
 
   const navItems = [
     {
@@ -166,16 +212,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                   <Input type="search" placeholder="Search..." className="pl-8 bg-muted/50" />
                 </div> */}
               </div>
-              <nav className="grid gap-1 px-2">
-                {navItems.map((item, index) => (
-                  <NavItem
-                    key={index}
-                    href={item.href}
-                    icon={item.icon}
-                    title={item.title}
-                    isActive={pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(`${item.href}/`))}
-                  />
-                ))}
+              <nav className="grid gap-1 px-2" onClick={() => setOpen(false)}>
+                <NavList items={navItems} money={visibleMoney} pathname={pathname} />
               </nav>
             </div>
           </SheetContent>
@@ -215,7 +253,14 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuLabel>
+                My Account
+                {admin && (
+                  <div className="text-xs font-normal text-muted-foreground">
+                    {admin.email} · {admin.role.replace("_", " ").toLowerCase()}
+                  </div>
+                )}
+              </DropdownMenuLabel>
               <DropdownMenuSeparator />
               {/* <DropdownMenuItem>
                 <Link href="/dashboard/profile" className="flex w-full items-center">
@@ -237,17 +282,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         </div>
       </header>
       <div className="flex flex-1">
-        <aside className="hidden w-64 flex-col border-r md:flex bg-background">
+        <aside className="sticky top-16 hidden h-[calc(100vh-4rem)] w-64 shrink-0 flex-col overflow-y-auto border-r bg-background md:flex">
           <nav className="grid gap-1 p-4">
-            {navItems.map((item, index) => (
-              <NavItem
-                key={index}
-                href={item.href}
-                icon={item.icon}
-                title={item.title}
-                isActive={pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(`${item.href}/`))}
-              />
-            ))}
+            <NavList items={navItems} money={visibleMoney} pathname={pathname} />
           </nav>
         </aside>
         <main className="flex-1 overflow-auto p-4 md:p-6">{children}</main>

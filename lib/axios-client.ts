@@ -1,60 +1,83 @@
-import axios from "axios";
+import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
 
-// Create an Axios client instance with a base URL
+export const TOKEN_KEY = "@aje-auth_token";
+export const REFRESH_KEY = "@aje-refresh_token";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.illumiacityempire.com";
+
+const storage = {
+  get: (k: string) => (typeof window === "undefined" ? null : window.localStorage.getItem(k)),
+  set: (k: string, v: string) => window.localStorage.setItem(k, v),
+  remove: (k: string) => window.localStorage.removeItem(k),
+};
+
+export const saveSession = (s: { token: string; refreshToken?: string }) => {
+  storage.set(TOKEN_KEY, s.token);
+  if (s.refreshToken) storage.set(REFRESH_KEY, s.refreshToken);
+};
+
+export const clearSession = () => {
+  storage.remove(TOKEN_KEY);
+  storage.remove(REFRESH_KEY);
+};
+
 const api = axios.create({
-  baseURL:
-    process.env.NEXT_PUBLIC_API_URL || "https://api.illumiacityempire.com",
-  headers: {
-    "Content-Type": "application/json",
-  },
-  timeout: 10000, // 10 seconds
+  baseURL: BASE_URL,
+  headers: { "Content-Type": "application/json" },
+  timeout: 30_000,
 });
 
-// Request interceptor for API calls
-api.interceptors.request.use(
-  (config) => {
-    // You can add auth tokens here if needed
-    const token = localStorage.getItem("@aje-auth_token");
-    if (token) {
-      config.headers["Authorization"] = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
+api.interceptors.request.use((config) => {
+  const token = storage.get(TOKEN_KEY);
+  if (token) config.headers["Authorization"] = `Bearer ${token}`;
+  return config;
+});
+
+/**
+ * Access tokens are short-lived. On a 401 the refresh token is exchanged once
+ * (parallel requests wait for the same refresh) and the request is retried.
+ * If that fails the session is over: back to the login page.
+ */
+let refreshing: Promise<string | null> | null = null;
+
+const refreshSession = async (): Promise<string | null> => {
+  const refreshToken = storage.get(REFRESH_KEY);
+  if (!refreshToken) return null;
+  try {
+    const res = await axios.post(`${BASE_URL}/auth/refresh`, { refreshToken }, { headers: { "X-Client-Auth": "refresh" }, timeout: 15_000 });
+    const body = res.data?.data ?? res.data;
+    if (!body?.token) return null;
+    saveSession({ token: body.token, refreshToken: body.refreshToken });
+    return body.token as string;
+  } catch {
+    return null;
   }
-);
+};
 
-// Response interceptor for API calls
+const endSession = () => {
+  clearSession();
+  if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
+    window.location.href = "/login?expired=1";
+  }
+};
+
 api.interceptors.response.use(
-  (response) => {
-    return response;
-  },
-  async (error) => {
-    const originalRequest = error.config;
-
-    // Handle token refresh or other error handling logic here
-    if (error.response) {
-      // The request was made and the server responded with a status code
-      // that falls out of the range of 2xx
-      console.error(
-        "Response error:",
-        error.response.status,
-        error.response.data
-      );
-
-      // Handle 401 Unauthorized errors - you might want to redirect to login
-      if (error.response.status === 401 && !originalRequest._retry) {
-        // Add your token refresh logic here if needed
+  (response) => response,
+  async (error: AxiosError) => {
+    const original = error.config as (InternalAxiosRequestConfig & { _retry?: boolean }) | undefined;
+    const url = original?.url ?? "";
+    const isAuthCall = url.includes("/admin/login") || url.includes("/auth/refresh");
+    if (error.response?.status === 401 && original && !original._retry && !isAuthCall) {
+      original._retry = true;
+      refreshing ??= refreshSession().finally(() => {
+        refreshing = null;
+      });
+      const token = await refreshing;
+      if (token) {
+        original.headers["Authorization"] = `Bearer ${token}`;
+        return api(original);
       }
-    } else if (error.request) {
-      // The request was made but no response was received
-      console.error("Request error:", error.request);
-    } else {
-      // Something happened in setting up the request that triggered an Error
-      console.error("Error:", error.message);
+      endSession();
     }
-
     return Promise.reject(error);
   }
 );
