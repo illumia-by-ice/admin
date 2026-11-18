@@ -110,6 +110,8 @@ const ChartTooltipContent = React.forwardRef<
       hideIndicator?: boolean
       indicator?: "line" | "dot" | "dashed"
       nameKey?: string
+      /** Formats each value (e.g. kobo → "₦1,234"). Default: toLocaleString. */
+      valueFormatter?: (value: number) => string
       labelKey?: string
     }
 >(
@@ -127,6 +129,7 @@ const ChartTooltipContent = React.forwardRef<
       formatter,
       color,
       nameKey,
+      valueFormatter,
       labelKey,
     },
     ref
@@ -238,9 +241,9 @@ const ChartTooltipContent = React.forwardRef<
                           {itemConfig?.label || item.name}
                         </span>
                       </div>
-                      {item.value && (
+                      {item.value !== undefined && item.value !== null && (
                         <span className="font-mono font-medium tabular-nums text-foreground">
-                          {item.value.toLocaleString()}
+                          {valueFormatter ? valueFormatter(Number(item.value)) : item.value.toLocaleString()}
                         </span>
                       )}
                     </div>

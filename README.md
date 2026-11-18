@@ -16,7 +16,10 @@ The API must allow this origin: add it to the API's `ADMIN_ORIGINS` (e.g. `http:
 |---|---|
 | `npm run dev` | Development server |
 | `npm run typecheck` | `tsc --noEmit` |
-| `npm run build` | Production build. Fails on type errors |
+| `npm run lint` | ESLint (Next.js rules). Errors fail the build; warnings don't |
+| `npm run build` | Production build. Fails on type or lint errors |
+
+Dependencies are managed with pnpm (`pnpm install`).
 
 ## Sign-in
 
@@ -36,6 +39,7 @@ The sidebar and action buttons follow the signed-in admin's role (from `GET /adm
 
 | Page | What it's for |
 |---|---|
+| Reports | Collections, plans started, amount financed, wallet money in/out and marketplace sales over 7 days to 12 months, plus overdue money by age and current KPIs. Every chart has a table view and CSV download |
 | Installment plans | BNPL / SNBL / RNSL plans, with queues for approvals, overdue plans and cancellation requests. The detail page has the schedule, payments, history and the actions for each product (approve, reject, cancel, release, record an offline payment, waive a late fee, add a note) |
 | Rent top-ups | Rent applications: documents, landlord details, approve and pay the landlord, retry a failed payout, mark as paid manually, reject |
 | Orders | Marketplace orders (ship, deliver, cancel and refund) and order settings |
@@ -44,5 +48,7 @@ The sidebar and action buttons follow the signed-in admin's role (from `GET /adm
 | Subscription plans | Create and edit plans and their limits, archive or restore, and subscription refunds |
 | Finance settings | Pricing and rules per product, late payments and limits, category and product overrides, and the settings a product actually gets |
 | Scheduled jobs | Last run of each job, and "run now" |
+
+Charts use shadcn/ui charts (Recharts) with three colour-vision-safe series colours, `--chart-1` to `--chart-3` in `app/globals.css`, set separately for light and dark.
 
 Money from the API is in kobo; the panel shows naira. Settings changes ask for a reason, which goes into the audit log.

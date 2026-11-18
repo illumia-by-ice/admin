@@ -335,7 +335,7 @@ export default function EditPropertyPage() {
       <div className="flex h-[400px] items-center justify-center">
         <div className="text-center">
           <p className="text-lg font-medium">Property not found</p>
-          <p className="text-muted-foreground">The property you're looking for doesn't exist.</p>
+          <p className="text-muted-foreground">The property you&apos;re looking for doesn&apos;t exist.</p>
           <Button asChild className="mt-4">
             <Link href="/dashboard/properties">
               <ArrowLeft className="mr-2 h-4 w-4" />

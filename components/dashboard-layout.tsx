@@ -34,6 +34,7 @@ import {
   BadgePercent,
   SlidersHorizontal,
   Timer,
+  LineChart as LineChartIcon,
 } from "lucide-react";
 import { useAdmin, type Permission } from "@/lib/use-admin";
 import { useQueryClient } from "@tanstack/react-query";
@@ -127,6 +128,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
 
   const moneyItems: { href: string; icon: ReactNode; title: string; perm: Permission }[] = [
+    { href: "/dashboard/reports", icon: <LineChartIcon className="h-4 w-4" />, title: "Reports", perm: "finance:read" },
     { href: "/dashboard/plans", icon: <CalendarClock className="h-4 w-4" />, title: "Installment plans", perm: "finance:read" },
     { href: "/dashboard/rent", icon: <KeyRound className="h-4 w-4" />, title: "Rent top-ups", perm: "finance:read" },
     { href: "/dashboard/orders", icon: <Package className="h-4 w-4" />, title: "Orders", perm: "orders:write" },
