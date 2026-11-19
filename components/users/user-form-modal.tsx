@@ -44,7 +44,7 @@ export function UserFormModal({
     phone: user?.phone || "",
     user_type: user?.user_type || "buyer",
     // verified: user?.verified,
-    // verification_status: user?.verification_status,
+    verification_status: user?.verification_status || "pending",
     bio: user?.bio || "",
     services: user?.services || "",
     address: user?.address || "",

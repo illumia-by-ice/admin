@@ -57,7 +57,7 @@ export function UsersProvider({ children }: { children: ReactNode }) {
   const [limit, setLimit] = useState<number>(10);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [userTypeFilter, setUserTypeFilter] = useState<string>("all");
-  const [verificationFilter, setVerificationFilter] = useState<string>("");
+  const [verificationFilter, setVerificationFilter] = useState<string>("all");
 
   // Prepare query params
   const queryParams: UserParams = {
@@ -261,6 +261,7 @@ export function VerificationProvider({ children }: { children: ReactNode }) {
     mutationFn: ({ userId, data }: { userId: string; data: { status: "pending" | "verified" | "rejected"; adminNotes?: string } }) => updateUserVerification(userId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["verificationRequests"] });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
       toast({ title: "Success", description: "Verification status updated" });
     },
     onError: (error: Error) => {

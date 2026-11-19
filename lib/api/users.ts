@@ -113,7 +113,8 @@ export interface UpdateUserData {
   phone?: string;
   user_type?: string;
 //   verified?: boolean;
-//   verification_status?: string;
+  /** Shown in the edit modal; the dedicated verification flow applies decisions. */
+  verification_status?: string;
   password?: string;
   bio?: string;
   services?: string;
@@ -194,7 +195,7 @@ export interface VerificationUser {
     note?: string;
     ninDocs: VerificationDoc[];
     cacDocs: VerificationDoc[];
-  };
+  } | null;
 }
 
 export interface VerificationRequestsResponse {
@@ -208,7 +209,10 @@ export interface VerificationRequestsResponse {
 }
 
 export const getVerificationRequests = async (params: { page?: number; limit?: number; user_type?: string; status?: string; search?: string } = {}): Promise<VerificationRequestsResponse> => {
-  const response = await api.get("/admin/users/verification/requests", { params });
+  // The API's status/user_type enums reject empty strings, so drop unset
+  // filters instead of sending status=&user_type= (which 422s the list).
+  const clean = Object.fromEntries(Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ""));
+  const response = await api.get("/admin/users/verification/requests", { params: clean });
   return response.data;
 };
 

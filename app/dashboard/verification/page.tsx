@@ -355,7 +355,7 @@ function VerificationPageContent() {
                                             </div>
 
                                             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                                              {selectedRequest.verification.ninDocs.map((doc:any) => (
+                                              {(selectedRequest.verification?.ninDocs ?? []).map((doc:any) => (
                                                 <div key={doc.id} className="overflow-hidden rounded-lg border">
                                                   <div className="aspect-video w-full overflow-hidden bg-muted">
                                                     <img src={doc.src} alt={doc.name} className="h-full w-full object-cover" />
@@ -366,7 +366,7 @@ function VerificationPageContent() {
                                                   </div>
                                                 </div>
                                               ))}
-                                              {selectedRequest.verification.cacDocs.map((doc:any) => (
+                                              {(selectedRequest.verification?.cacDocs ?? []).map((doc:any) => (
                                                 <div key={doc.id} className="overflow-hidden rounded-lg border">
                                                   <div className="aspect-video w-full overflow-hidden bg-muted">
                                                     <img src={doc.src} alt={doc.name} className="h-full w-full object-cover" />
@@ -378,11 +378,14 @@ function VerificationPageContent() {
                                                 </div>
                                               ))}
                                             </div>
+                                            {!selectedRequest.verification && (
+                                              <p className="text-sm text-muted-foreground">No documents were submitted for this user. You can still approve or reject based on other checks.</p>
+                                            )}
 
                                             {selectedRequest.verification_status === "rejected" && (
                                               <div className="rounded-md border p-4">
                                                 <h4 className="font-medium">Admin Notes:</h4>
-                                                <p className="mt-1 text-muted-foreground">{selectedRequest.verification.note}</p>
+                                                <p className="mt-1 text-muted-foreground">{selectedRequest.verification?.note}</p>
                                               </div>
                                             )}
 
