@@ -52,3 +52,7 @@ The sidebar and action buttons follow the signed-in admin's role (from `GET /adm
 Charts use shadcn/ui charts (Recharts) with three colour-vision-safe series colours, `--chart-1` to `--chart-3` in `app/globals.css`, set separately for light and dark.
 
 Money from the API is in kobo; the panel shows naira. Settings changes ask for a reason, which goes into the audit log.
+
+## Error monitoring (Sentry)
+
+Set `NEXT_PUBLIC_SENTRY_DSN` (and optionally `NEXT_PUBLIC_SENTRY_ENVIRONMENT`, `NEXT_PUBLIC_SENTRY_RELEASE`) to report errors, traces and Session Replays to the `aje-admin` Sentry project. Leave it empty to turn Sentry off. Replays mask all text and inputs and block media, and no cookies, bodies or query strings are sent. Browser events go through `/monitoring` so ad blockers don't drop them. To upload source maps, set `SENTRY_AUTH_TOKEN` at build time.

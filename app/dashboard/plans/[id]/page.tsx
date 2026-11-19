@@ -50,7 +50,7 @@ export default function PlanPage({ params }: { params: Promise<{ id: string }> }
                 {fullName(plan.user)} · {plan.user?.email} · {plan.user?.phone ?? "no phone"} · <span className="font-mono text-xs">{plan.id}</span>
               </>
             }
-            actions={can("finance:write") ? <PlanActions plan={plan} act={act} /> : null}
+            actions={can("finance:write") || can("plans:notes") ? <PlanActions plan={plan} act={act} canMoney={can("finance:write")} /> : null}
           />
 
           {plan.cancel_requested_at && (
@@ -240,13 +240,13 @@ function lateFeeLabel(plan: PlanDetail) {
   return f.type === "FLAT" ? `${formatNaira(f.value * 100)} per late installment` : `${f.value}% per late installment`;
 }
 
-function PlanActions({ plan, act }: { plan: PlanDetail; act: (fn: () => Promise<unknown>) => () => Promise<unknown> }) {
+function PlanActions({ plan, act, canMoney }: { plan: PlanDetail; act: (fn: () => Promise<unknown>) => () => Promise<unknown>; canMoney: boolean }) {
   const reason = { name: "reason", label: "Reason", type: "reason" as const, required: true, hint: "Shown to the customer and kept in the audit trail." };
   const actions: ReactNode[] = [];
   // Runs the API call with the dialog's values, then refreshes the plan.
   const capture = (fn: (vals: Record<string, any>) => Promise<unknown>) => (vals: Record<string, unknown>) => act(() => fn(vals))();
 
-  if (plan.type === "BNPL") {
+  if (canMoney && plan.type === "BNPL") {
     if (plan.status === "PENDING_APPROVAL") {
       actions.push(
         <ActionDialog
@@ -262,7 +262,7 @@ function PlanActions({ plan, act }: { plan: PlanDetail; act: (fn: () => Promise<
         <ActionDialog key="reject" label="Reject" destructive title="Reject this plan?" description="Anything the customer paid goes back to their wallet and the order is cancelled." fields={[reason]} confirmLabel="Reject plan" success="Plan rejected and refunded" onConfirm={capture((x) => financeApi.bnplReject(plan.id, x.reason))} />
       );
     }
-    if (["PENDING_APPROVAL", "ACTIVE", "OVERDUE"].includes(plan.status)) {
+    if (["PENDING_APPROVAL", "ACTIVE", "PRODUCT_RELEASED", "OVERDUE"].includes(plan.status)) {
       actions.push(
         <ActionDialog key="cancel" label="Cancel plan" variant="outline" title="Cancel this plan?" description="Only possible until the item ships. Everything paid is refunded to the customer’s wallet." fields={[reason]} confirmLabel="Cancel plan" destructive success="Plan cancelled and refunded" onConfirm={capture((x) => financeApi.bnplCancel(plan.id, x.reason))} />
       );
@@ -270,13 +270,13 @@ function PlanActions({ plan, act }: { plan: PlanDetail; act: (fn: () => Promise<
   }
 
   if (plan.type === "SNBL") {
-    if (plan.status === "SAVING" && plan.release_blocked_reason) {
+    if (canMoney && plan.status === "SAVING" && plan.release_blocked_reason) {
       actions.push(<ActionDialog key="release" label="Retry release" variant="outline" title="Retry releasing the item?" description="Works once the customer is verified." success="Item released" onConfirm={capture(() => financeApi.snblRelease(plan.id))} />);
     }
     if (plan.cancel_requested_at) {
       actions.push(<ActionDialog key="decline" label="Decline request" variant="outline" title="Decline the cancellation request?" fields={[reason]} confirmLabel="Decline" success="Request declined" onConfirm={capture((x) => financeApi.snblDeclineCancel(plan.id, x.reason))} />);
     }
-    if (["SAVING", "PRODUCT_RELEASED", "OVERDUE", "DEFAULTED"].includes(plan.status)) {
+    if (canMoney && ["SAVING", "PRODUCT_RELEASED", "OVERDUE", "DEFAULTED"].includes(plan.status)) {
       actions.push(
         <ActionDialog
           key="cancel"
@@ -293,7 +293,7 @@ function PlanActions({ plan, act }: { plan: PlanDetail; act: (fn: () => Promise<
     }
   }
 
-  if (PAYABLE.includes(plan.status) && plan.status !== "PENDING_APPROVAL") {
+  if (canMoney && PAYABLE.includes(plan.status) && plan.status !== "PENDING_APPROVAL") {
     actions.push(
       <ActionDialog
         key="pay"

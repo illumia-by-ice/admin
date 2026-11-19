@@ -35,6 +35,9 @@ import {
   SlidersHorizontal,
   Timer,
   LineChart as LineChartIcon,
+  ClipboardCheck,
+  Headset,
+  UsersRound,
 } from "lucide-react";
 import { useAdmin, type Permission } from "@/lib/use-admin";
 import { useQueryClient } from "@tanstack/react-query";
@@ -128,15 +131,18 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
 
   const moneyItems: { href: string; icon: ReactNode; title: string; perm: Permission }[] = [
+    { href: "/dashboard/applications", icon: <ClipboardCheck className="h-4 w-4" />, title: "Applications", perm: "applications:read" },
+    { href: "/dashboard/sales-desk", icon: <Headset className="h-4 w-4" />, title: "Sales desk", perm: "followups:write" },
     { href: "/dashboard/reports", icon: <LineChartIcon className="h-4 w-4" />, title: "Reports", perm: "finance:read" },
     { href: "/dashboard/plans", icon: <CalendarClock className="h-4 w-4" />, title: "Installment plans", perm: "finance:read" },
     { href: "/dashboard/rent", icon: <KeyRound className="h-4 w-4" />, title: "Rent top-ups", perm: "finance:read" },
-    { href: "/dashboard/orders", icon: <Package className="h-4 w-4" />, title: "Orders", perm: "orders:write" },
+    { href: "/dashboard/orders", icon: <Package className="h-4 w-4" />, title: "Orders", perm: "orders:read" },
     { href: "/dashboard/wallets", icon: <Wallet className="h-4 w-4" />, title: "Wallets", perm: "wallet:read" },
     { href: "/dashboard/withdrawals", icon: <ArrowUpRight className="h-4 w-4" />, title: "Withdrawals", perm: "wallet:read" },
     { href: "/dashboard/subscriptions", icon: <BadgePercent className="h-4 w-4" />, title: "Subscription plans", perm: "finance:read" },
     { href: "/dashboard/finance-settings", icon: <SlidersHorizontal className="h-4 w-4" />, title: "Finance settings", perm: "finance:read" },
     { href: "/dashboard/jobs", icon: <Timer className="h-4 w-4" />, title: "Scheduled jobs", perm: "finance:read" },
+    { href: "/dashboard/team", icon: <UsersRound className="h-4 w-4" />, title: "Team", perm: "users:read" },
   ];
   const visibleMoney = moneyItems.filter((i) => can(i.perm));
 
@@ -259,7 +265,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 My Account
                 {admin && (
                   <div className="text-xs font-normal text-muted-foreground">
-                    {admin.email} · {admin.role.replace("_", " ").toLowerCase()}
+                    {admin.email} · {admin.role.replace(/_/g, " ").toLowerCase()}
                   </div>
                 )}
               </DropdownMenuLabel>
